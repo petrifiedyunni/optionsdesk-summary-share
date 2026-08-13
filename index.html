@@ -232,6 +232,28 @@
       color: var(--muted);
     }
     tr:last-child td { border-bottom: none; }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 7px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.03em;
+      border: 1px solid var(--line);
+      background: #ecefeb;
+      white-space: nowrap;
+    }
+    .pill.ok { background: var(--live-bg); color: var(--live); border-color: #b5d9c8; }
+    .pill.block { background: var(--warn-bg); color: var(--warn); border-color: #e8c8bf; }
+    .pill.warn { background: var(--paper-bg); color: var(--paper); border-color: #e2d4a8; }
+    .pill.info { background: var(--options-bg); color: var(--options); border-color: #c5d4e8; }
+
+    .note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0 0 10px;
+    }
+
     code, .mono {
       font-family: var(--mono);
       font-size: 0.84em;
@@ -492,37 +514,86 @@
         </div>
       </div>
 
+      <h3>Name filters</h3>
+      <p class="note">Fast first pass. A name must look tradeable and not already breaking down before it even gets a score.</p>
       <table>
         <thead>
           <tr>
+            <th>Layer</th>
             <th>Rule</th>
-            <th>Detail</th>
+            <th>Why</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Pre-filter</td>
-            <td>Must pass ≥3 of 5: price &gt; $5, vol spike &gt; 1.2×, not down &gt; 8% DoD, min volume, positive close</td>
+            <td><span class="pill info">Pass ≥ 3 of 5</span></td>
+            <td>Cheap screen so weak / dead names never hit the full scorecard.</td>
+          </tr>
+          <tr>
+            <td></td>
+            <td>Price &gt; $5 · volume spike &gt; 1.2× avg · not down &gt; 8% day-on-day · minimum absolute volume · positive close</td>
+            <td>Wants participation today, not a falling knife or a penny name.</td>
           </tr>
           <tr>
             <td>Liquidity</td>
-            <td>20d avg vol ≥ 500k, price ≥ $10, dollar volume ≥ $5m</td>
+            <td>20-day avg volume ≥ 500k · price ≥ $10 · dollar volume ≥ $5m</td>
+            <td>Swing size has to be able to enter and exit without owning the tape.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Signal scorecard</h3>
+      <p class="note">Points add up. Only Strong Buy (≥ 95) is meant for a live-style entry; Watch (≥ 80) is alert-only.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Points</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Close above EMA21</td><td>+15</td><td>Short-term trend still intact.</td></tr>
+          <tr><td>Close above EMA50</td><td>+10</td><td>Medium trend confirmation.</td></tr>
+          <tr><td>Close above EMA200</td><td>+10</td><td>Avoid fighting the long trend.</td></tr>
+          <tr><td>EMA8 crossed above EMA21 in last 3 bars</td><td>+20</td><td>Fresh momentum inflection, not a stale trend.</td></tr>
+          <tr><td>RSI(14) between 50 and 65</td><td>+15</td><td>Bullish but not already overbought.</td></tr>
+          <tr><td>MACD histogram turned positive in last 2 bars</td><td>+15</td><td>Momentum just flipped up.</td></tr>
+          <tr><td>Volume &gt; 1.3× 20-day average</td><td>+15</td><td>Move has real participation.</td></tr>
+        </tbody>
+      </table>
+      <p class="note"><span class="pill ok">Strong Buy ≥ 95</span> &nbsp; <span class="pill warn">Watch ≥ 80</span> &nbsp; <span class="pill info">Neutral ≥ 65</span> &nbsp; otherwise Weak.</p>
+
+      <h3>Risk, stop, and exits</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Stop</td>
+            <td>max(EMA21, price − 1.5 ATR)</td>
+            <td>Uses trend structure <em>and</em> volatility, not a fixed % stop.</td>
           </tr>
           <tr>
-            <td>Scorecard</td>
-            <td>EMA21/50/200, EMA8×21 cross, RSI 50–65, MACD turn, volume &gt; 1.3× → Strong Buy ≥ 95</td>
-          </tr>
-          <tr>
-            <td>Stop / targets</td>
-            <td>Stop = max(EMA21, price − 1.5 ATR) · T1 1.5R · T2 2.5R</td>
+            <td>Targets</td>
+            <td>T1 = 1.5R · T2 = 2.5R</td>
+            <td>Scale into strength instead of hoping for a home run.</td>
           </tr>
           <tr>
             <td>Managed exits</td>
-            <td>Scale out 33% at 1R and 2R, then trail remaining</td>
+            <td>Sell 33% at 1R, 33% at 2R, trail the rest</td>
+            <td>Locks some gain early; leftover rides with a trailing stop.</td>
           </tr>
           <tr>
             <td>Sizing</td>
-            <td>3% risk default, 5% hard cap · size = risk budget / stop distance</td>
+            <td>Risk 3% of capital (hard cap 5%) ÷ stop distance</td>
+            <td>Position size comes from downside first, not from conviction alone.</td>
           </tr>
         </tbody>
       </table>
@@ -550,17 +621,136 @@
         </ul>
       </div>
 
-      <div class="block">
-        <div class="meta">HYPOTHESIS_V2 · active</div>
-        <ul class="clean">
-          <li><strong>Entry</strong> — IVR ≥ 70 · ~0.25Δ put · 7–14 DTE (target 10) · spread ≤ 20% of mid</li>
-          <li><strong>Exits</strong> — take profit 50% of credit · stop at 2× premium · mark = live ask</li>
-          <li><strong>Risk</strong> — max 5 positions · max 15 new/week · ≤5% capital / trade · sleeve ≤ 80% NAV</li>
-          <li><strong>Dedupe</strong> — one underlying at a time (ticker + live short-put check), not strike</li>
-          <li><strong>Skip</strong> — earnings within 5 days (Sleeve E owns that) · no-bid / illiquid chain</li>
-          <li><strong>Regime</strong> — block bear &amp; high-vol choppy · reduced size in ranging</li>
-        </ul>
-      </div>
+      <h3>Name-level filters</h3>
+      <p class="note">A ticker must clear all of these before we even look at a strike. Fail any one → skip.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Universe</td>
+            <td>Top 100 US names by average volume</td>
+            <td>Only names that can actually fill a short put without owning the book.</td>
+          </tr>
+          <tr>
+            <td>Volatility</td>
+            <td><span class="pill info">IV Rank ≥ 70</span></td>
+            <td>IV Rank = where today’s implied vol sits vs the last year. High = premium is relatively expensive, so selling it pays more.</td>
+          </tr>
+          <tr>
+            <td>Earnings</td>
+            <td><span class="pill block">No earnings within 5 days</span></td>
+            <td>Binary jump risk. That window belongs to Sleeve E, not this CSP book.</td>
+          </tr>
+          <tr>
+            <td>Chain</td>
+            <td><span class="pill info">Option chain must exist</span></td>
+            <td>No expiry / strike data → nothing to sell.</td>
+          </tr>
+          <tr>
+            <td>Quote quality</td>
+            <td><span class="pill block">Skip if no live bid/ask</span></td>
+            <td>After-hours empty quotes used to look like fills. Now they are rejected at build time.</td>
+          </tr>
+          <tr>
+            <td>Regime</td>
+            <td>
+              <span class="pill ok">Bull = full size</span>
+              <span class="pill warn">Range = reduced</span>
+              <span class="pill block">Bear / high-vol chop = stand down</span>
+            </td>
+            <td>Short-vol loses when the tape is trending hard against you. V2 uses SPY ADX + VIX percentile, not a blunt VIX on/off switch.</td>
+          </tr>
+          <tr>
+            <td>Capital</td>
+            <td><span class="pill info">Full CSP collateral available</span></td>
+            <td>Strike × 100 must fit inside cash + sleeve cap. No naked leverage here.</td>
+          </tr>
+          <tr>
+            <td>Dedupe</td>
+            <td><span class="pill warn">One underlying at a time</span></td>
+            <td>Blocks a second CSP if we already hold that name — even if delta targeting drifts to a nearby strike (the CPNG $15 vs $15.50 case).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Contract selection</h3>
+      <p class="note">Once the name passes, we pick one cash-secured put. All of these must match hypothesis v2.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Structure</td>
+            <td>Short cash-secured put</td>
+            <td>Defined collateral, known max loss = strike × 100 − credit.</td>
+          </tr>
+          <tr>
+            <td>Delta</td>
+            <td>Target ~0.25 · accept 0.20–0.30</td>
+            <td>Far enough OTM to win often, close enough that the premium is still worth selling.</td>
+          </tr>
+          <tr>
+            <td>Tenor</td>
+            <td>7–14 DTE · target ~10</td>
+            <td>Theta decays fast here without sitting through a full month of gap risk.</td>
+          </tr>
+          <tr>
+            <td>Spread</td>
+            <td>Bid/ask ≤ 20% of mid</td>
+            <td>Wide markets eat the edge on entry and exit.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Exits and sizing</h3>
+      <p class="note">Auto-close only fires on these marks. It will <em>not</em> unwind a “shouldn’t have opened” trade.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Take profit</td>
+            <td>Buy back when ask ≤ 50% of credit received</td>
+            <td>Capture most of the premium early; leftover theta isn’t worth the tail risk.</td>
+          </tr>
+          <tr>
+            <td>Stop</td>
+            <td>Buy back when ask ≥ 2× credit</td>
+            <td>Premium doubled against us → cut before assignment risk explodes.</td>
+          </tr>
+          <tr>
+            <td>Mark</td>
+            <td>Use live <strong>ask</strong> (what we’d pay to close)</td>
+            <td>Last/mid at the open caused phantom profit triggers.</td>
+          </tr>
+          <tr>
+            <td>Per trade</td>
+            <td>≤ 5% of NAV collateral</td>
+            <td>One name cannot dominate the book.</td>
+          </tr>
+          <tr>
+            <td>Book</td>
+            <td>Max 5 open · max 15 new / week · sleeve ≤ 80% NAV</td>
+            <td>v2 raised the weekly cap (was 2) and sleeve % (was 40%) so the 3/day session isn’t fake-blocked.</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h3>Live path</h3>
       <div class="flow">
@@ -626,17 +816,106 @@
         </ul>
       </div>
 
-      <div class="block">
-        <div class="meta">EARNINGS_SLEEVE_V1 · registered 2026-08-03</div>
-        <ul class="clean">
-          <li><strong>Window</strong> — 1–3 days to earnings · universe top 200 liquid (or pinned watchlist)</li>
-          <li><strong>IVR</strong> — ≥ 65 · skip if implied move &gt; 25%</li>
-          <li><strong>Short delta</strong> — ~0.22 · wing ~8% away</li>
-          <li><strong>Naked flag</strong> — implied move &lt; 15% then human override</li>
-          <li><strong>Exits</strong> — 50% / 2× in session · 30% target morning after print</li>
-          <li><strong>Size</strong> — 2% NAV risk on spread max-loss · 5% NAV collateral if naked · max 5 contracts</li>
-        </ul>
-      </div>
+      <h3>When a name qualifies</h3>
+      <p class="note">This sleeve only looks at names about to report. CSP is explicitly banned from the same window.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Universe</td>
+            <td>Top 200 liquid US names, or a pinned watchlist</td>
+            <td>Earnings moves need a deep enough chain to buy the long wing.</td>
+          </tr>
+          <tr>
+            <td>Calendar</td>
+            <td><span class="pill info">1–3 days to earnings</span></td>
+            <td>Too early → crush hasn’t priced in yet. Day-of / after → already too late.</td>
+          </tr>
+          <tr>
+            <td>IV Rank</td>
+            <td><span class="pill info">IVR ≥ 65</span></td>
+            <td>Slightly lower bar than CSP (70) because event vol is usually already rich.</td>
+          </tr>
+          <tr>
+            <td>Implied move</td>
+            <td><span class="pill block">Skip if straddle move &gt; 25%</span></td>
+            <td>Fat-tail names can gap through any wing. Don’t sell those events.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Structure</h3>
+      <p class="note">Default is defined-risk. Naked is opt-in only, and only when the implied move is small.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Default</td>
+            <td>Credit vertical — put spread if bullish, call spread if bearish</td>
+            <td>Max loss is the width minus credit. Assignment on the short leg is hedged by the long wing.</td>
+          </tr>
+          <tr>
+            <td>Short delta</td>
+            <td>~0.22</td>
+            <td>A bit further OTM than CSP’s 0.25 — earnings gaps are wider than normal days.</td>
+          </tr>
+          <tr>
+            <td>Wing</td>
+            <td>~8% away from the short strike</td>
+            <td>Cheap defined-risk hedge; keeps max loss inside the 2% NAV budget.</td>
+          </tr>
+          <tr>
+            <td>Naked override</td>
+            <td><span class="pill warn">Only if implied move &lt; 15%</span> and Telegram <code>YES NAKED</code></td>
+            <td>Small expected gap → CSP-style premium can be worth it, but a human has to say so.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Exits and sizing</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>In session</td>
+            <td>Take profit 50% of credit · stop at 2×</td>
+            <td>Same discipline as CSP before the print.</td>
+          </tr>
+          <tr>
+            <td>Morning after</td>
+            <td>Close at 30% of credit (looser) or market — don’t hold a second session</td>
+            <td>The crush usually happens overnight. Sitting another day just reloads gap risk.</td>
+          </tr>
+          <tr>
+            <td>Spread size</td>
+            <td>Risk 2% of NAV on max loss · max 5 contracts</td>
+            <td>One earnings name cannot blow the book.</td>
+          </tr>
+          <tr>
+            <td>If naked</td>
+            <td>Collateral ≤ 5% of NAV</td>
+            <td>Same per-name cap as a CSP.</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h3>Live path</h3>
       <div class="flow">
