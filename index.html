@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OptionsDesk Post-Meeting Summary</title>
+  <title>SwingDesk · Multi-Sleeve Update</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -66,7 +66,7 @@
 
     .subtitle {
       margin: 0;
-      max-width: 840px;
+      max-width: 860px;
       color: var(--muted);
       font-size: 1rem;
     }
@@ -132,7 +132,7 @@
     }
 
     .card-value {
-      font-size: 1.45rem;
+      font-size: 1.35rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       margin-bottom: 4px;
@@ -228,309 +228,218 @@
 <body>
   <div class="page">
     <section class="hero">
-      <div class="kicker">SwingDesk / OptionsDesk / Post-Meeting Summary</div>
-      <h1>Systematic Cash-Secured Put Desk</h1>
+      <div class="kicker">SwingDesk / Multi-Sleeve Update · Aug 2026</div>
+      <h1>Three live sleeves, one risk stack</h1>
       <p class="subtitle">
-        OptionsDesk is a rules-based premium-selling strategy on liquid US equities. It only enters when implied volatility is rich,
-        the broad market regime is supportive, the option contract is tradeable, and the account can fully secure the downside collateral.
+        Since the post-meeting summary, the desk has moved from a single CSP workflow to a multi-process stack:
+        cash-secured puts, earnings IV crush, and long equity — each a separate engine, sharing IBKR, Telegram, and capital caps.
       </p>
       <div class="badges">
-        <span class="badge live">Live CSP Desk</span>
-        <span class="badge rules">Rule-Based Entry + Exit</span>
-        <span class="badge risk">Collateral First Risk Control</span>
+        <span class="badge live">CSP Live</span>
+        <span class="badge live">Sleeve E Live</span>
+        <span class="badge risk">Equity Dry-Run</span>
+        <span class="badge rules">VOLHARVEST Paper</span>
       </div>
     </section>
 
     <section class="grid-4">
       <div class="card">
-        <div class="card-label">Current Universe</div>
-        <div class="card-value">Top 100</div>
-        <div class="card-note">Current live scan on liquid US names</div>
+        <div class="card-label">CSP Desk</div>
+        <div class="card-value">Live</div>
+        <div class="card-note">Hypothesis v2 · ticker-level dedupe · 50% / 2× exits</div>
       </div>
       <div class="card">
-        <div class="card-label">Entry Trigger</div>
-        <div class="card-value">IV Rank &gt;= 70</div>
-        <div class="card-note">Only sell premium when options are relatively rich</div>
+        <div class="card-label">Sleeve E</div>
+        <div class="card-value">Live</div>
+        <div class="card-note">Earnings IV crush · verticals · close morning after</div>
       </div>
       <div class="card">
-        <div class="card-label">Target Contract</div>
-        <div class="card-value">0.20-0.30 Delta</div>
-        <div class="card-note">Short-dated put with target tenor around 10 DTE</div>
+        <div class="card-label">Long Equity</div>
+        <div class="card-value">Dry-run</div>
+        <div class="card-note">Swing scorecard · scale-out / trail · no live stock bridge yet</div>
       </div>
       <div class="card">
-        <div class="card-label">Exit Logic</div>
-        <div class="card-value">50% TP / 2x Stop</div>
-        <div class="card-note">Profit capture early, cut losses on premium expansion</div>
+        <div class="card-label">VOLHARVEST</div>
+        <div class="card-value">Paper</div>
+        <div class="card-note">IV–RV harvest supervised · Telegram only, no IB orders</div>
       </div>
+    </section>
+
+    <section class="section">
+      <h2>What changed since the last published note</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Sleeve</th>
+            <th>Update</th>
+            <th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CSP</td>
+            <td>Hypothesis v2: weekly new-trade cap <strong>2 → 15</strong>; options sleeve cap <strong>40% → 80%</strong> of NAV</td>
+            <td>Unblocks the 3/day session limit and uses more of available collateral without changing per-trade 5% max.</td>
+          </tr>
+          <tr>
+            <td>CSP</td>
+            <td>Dedupe is now <strong>one name at a time</strong> (ticker + live short-put check), not ticker|expiry|strike</td>
+            <td>Stops a second CSP when spot drifts and delta targeting picks a nearby strike (the CPNG $15 / $15.50 case).</td>
+          </tr>
+          <tr>
+            <td>CSP</td>
+            <td>Skip illiquid / no-bid contracts at build time; IB clientId pool so sleeves don’t collide</td>
+            <td>After-hours empty quotes no longer look like fills; OptionsDesk and Sleeve E can run together.</td>
+          </tr>
+          <tr>
+            <td>Sleeve E</td>
+            <td>New earnings IV-crush engine: 1–3 DTE window, IVR ≥ 65, defined-risk vertical, optional naked override</td>
+            <td>Separate process from CSP; auto-closes the morning after earnings.</td>
+          </tr>
+          <tr>
+            <td>Equity</td>
+            <td>Confirming-signal gate + managed scale-out (1R / 2R) and trailing stop in paper book</td>
+            <td>Same exit logic as backtest; live stock execution still not enabled.</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="grid-2">
       <div class="section">
-        <h2>1. Strategy Objective</h2>
-        <p>
-          The desk sells short-dated cash-secured puts to harvest elevated option premium. It is selective by design: no trade is
-          placed unless volatility, market regime, contract quality, and account-level collateral checks all align.
-        </p>
+        <h2>CSP — still the core income sleeve</h2>
+        <ul class="clean">
+          <li><strong>Universe:</strong> top 100 liquid US names</li>
+          <li><strong>Entry:</strong> IV Rank ≥ 70, 7–14 DTE, delta 0.20–0.30</li>
+          <li><strong>Exits:</strong> take profit at 50% of credit; stop at 2× premium</li>
+          <li><strong>Sizing:</strong> max 5% NAV per trade, max 5 open, regime-scaled</li>
+          <li><strong>Collateral:</strong> fully cash-secured; sleeve ≤ 80% NAV</li>
+          <li><strong>Ops:</strong> auto-approve optional; STOP / PAUSE / PANIC on Telegram</li>
+        </ul>
         <div class="highlight">
-          <strong>Core idea:</strong> monetize rich implied volatility while keeping exposure fully cash-backed and rules-driven.
+          Auto-exit does <em>not</em> unwind “shouldn’t have opened” trades. Only 50% / 2× marks fire a buy-to-close.
         </div>
       </div>
 
       <div class="section">
-        <h2>2. Universe Construction</h2>
+        <h2>Sleeve E — earnings IV crush</h2>
         <ul class="clean">
-          <li><strong>Market:</strong> liquid US equities only</li>
-          <li><strong>Research default:</strong> top 150 liquid names</li>
-          <li><strong>Current live setup:</strong> top 100 liquid names</li>
-          <li><strong>Ranking basis:</strong> average trading liquidity / volume</li>
+          <li><strong>Window:</strong> 1–3 days to earnings</li>
+          <li><strong>IVR floor:</strong> 65</li>
+          <li><strong>Skip:</strong> implied move &gt; 25%</li>
+          <li><strong>Default structure:</strong> directional vertical (put credit if bullish, call credit if bearish)</li>
+          <li><strong>Short delta:</strong> ~0.22; wing ~8% away</li>
+          <li><strong>Naked CSP:</strong> only if implied move &lt; 15% and human replies YES NAKED</li>
+          <li><strong>Exit:</strong> 50% / 2× in session; looser 30% target the morning after print</li>
+          <li><strong>Scan:</strong> top 200 liquid names (or a pinned watchlist)</li>
         </ul>
       </div>
     </section>
 
     <section class="section">
-      <h2>3. Entry Criteria and Filters</h2>
+      <h2>CSP entry filters (unchanged thesis)</h2>
       <table>
         <thead>
           <tr>
-            <th>Filter Layer</th>
+            <th>Filter</th>
             <th>Rule</th>
-            <th>Why It Exists</th>
+            <th>Why</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Volatility</td>
-            <td><span class="pill blue">IV Rank &gt;= 70</span></td>
-            <td>Only sell puts when option premium is relatively elevated versus recent history.</td>
+            <td><span class="pill blue">IV Rank ≥ 70</span></td>
+            <td>Only sell premium when it is rich versus the name’s recent history.</td>
           </tr>
           <tr>
             <td>Earnings</td>
             <td><span class="pill red">No earnings within 5 days</span></td>
-            <td>Avoid jump risk and event-driven repricing close to earnings.</td>
+            <td>CSP sleeve stays away from the event; Sleeve E owns that window.</td>
           </tr>
           <tr>
-            <td>Option chain</td>
-            <td><span class="pill blue">Chain must be available</span></td>
-            <td>Trade is skipped if expiry/strike data is incomplete or missing.</td>
+            <td>Quote quality</td>
+            <td><span class="pill blue">Live bid/ask required</span></td>
+            <td>No-bid / after-hours empty chain is skipped, not filled on last/mid.</td>
           </tr>
           <tr>
-            <td>Market regime</td>
-            <td><span class="pill green">Bull = full size</span> <span class="pill amber">Range = reduced size</span> <span class="pill red">Bear / choppy = no trade</span></td>
-            <td>Short-vol and short-put risk is only deployed when the broad tape is not hostile.</td>
+            <td>Regime</td>
+            <td><span class="pill green">Bull = full</span> <span class="pill amber">Range = reduced</span> <span class="pill red">Bear / choppy = stand down</span></td>
+            <td>Short-vol only when the tape is not hostile.</td>
           </tr>
           <tr>
-            <td>Capital check</td>
-            <td><span class="pill blue">Collateral must be available</span></td>
-            <td>Every position must be fully cash-secured and fit inside sleeve limits.</td>
+            <td>Name uniqueness</td>
+            <td><span class="pill amber">One short-put name at a time</span></td>
+            <td>Strike drift cannot open a second CSP on the same underlying.</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <section class="grid-2">
-      <div class="section">
-        <h2>4. Option Contract Selection</h2>
-        <ul class="clean">
-          <li><strong>Structure:</strong> short cash-secured put</li>
-          <li><strong>Target delta:</strong> approximately 0.25</li>
-          <li><strong>Accepted delta band:</strong> 0.20 to 0.30</li>
-          <li><strong>DTE window:</strong> 7 to 14 days</li>
-          <li><strong>Target tenor:</strong> around 10 DTE</li>
-          <li><strong>Execution quality filter:</strong> reject if bid/ask spread is above 20% of mid</li>
-        </ul>
-      </div>
-
-      <div class="section">
-        <h2>5. Sizing Framework</h2>
-        <ul class="clean">
-          <li><strong>Max 5% of capital per trade</strong></li>
-          <li><strong>Regime multiplier:</strong> 1.0x in bullish tape, 0.75x in ranging tape</li>
-          <li><strong>Max 40% of NAV</strong> allocated to the options sleeve</li>
-          <li><strong>Max 5 open positions</strong></li>
-          <li><strong>Max 2 new trades per week</strong></li>
-        </ul>
-        <div class="highlight">
-          Position count is derived from available collateral. If the account cannot reserve the full CSP cash requirement, the trade is rejected.
-        </div>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="section">
-        <h2>6. Risk Management</h2>
-        <ul class="clean">
-          <li><strong>Take profit:</strong> close at 50% of credit captured</li>
-          <li><strong>Stop loss:</strong> close if premium expands to 2x entry premium</li>
-          <li><strong>Assignment aware:</strong> positions are fully cash-secured</li>
-          <li><strong>Monitoring:</strong> open positions are checked continuously during session flow</li>
-        </ul>
-      </div>
-
-      <div class="section">
-        <h2>7. Operating Safeguards</h2>
-        <ul class="clean">
-          <li>Approval workflow available before order transmission</li>
-          <li>Duplicate trade prevention</li>
-          <li>Per-session trade caps</li>
-          <li>Emergency stop / pause / panic controls</li>
-          <li>Pre-session checks for connectivity, market data, and capital availability</li>
-        </ul>
-      </div>
-    </section>
-
     <section class="section">
-      <h2>8. Backtest Snapshot</h2>
+      <h2>CSP backtest snapshot (hypothesis still the same contract rules)</h2>
       <table>
         <thead>
           <tr>
             <th>Metric</th>
-            <th>In-Sample (2021-2023)</th>
-            <th>Out-of-Sample (2024-2025)</th>
+            <th>In-Sample (2021–2023)</th>
+            <th>Out-of-Sample (2024–2025)</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>Total trades</td>
-            <td>105</td>
-            <td>79</td>
-          </tr>
-          <tr>
-            <td>Win rate</td>
-            <td>92.4%</td>
-            <td>97.5%</td>
-          </tr>
-          <tr>
-            <td>Expectancy per trade</td>
-            <td>$38.56</td>
-            <td>$27.70</td>
-          </tr>
-          <tr>
-            <td>Profit factor</td>
-            <td>5.98</td>
-            <td>25.13</td>
-          </tr>
-          <tr>
-            <td>Total P&amp;L</td>
-            <td>$4,048.73</td>
-            <td>$2,188.52</td>
-          </tr>
-          <tr>
-            <td>Max drawdown</td>
-            <td>-5.3%</td>
-            <td>-1.4%</td>
-          </tr>
-          <tr>
-            <td>Assignment rate</td>
-            <td>2.9%</td>
-            <td>0.0%</td>
-          </tr>
+          <tr><td>Total trades</td><td>105</td><td>79</td></tr>
+          <tr><td>Win rate</td><td>92.4%</td><td>97.5%</td></tr>
+          <tr><td>Expectancy per trade</td><td>$38.56</td><td>$27.70</td></tr>
+          <tr><td>Profit factor</td><td>5.98</td><td>25.13</td></tr>
+          <tr><td>Total P&amp;L</td><td>$4,048.73</td><td>$2,188.52</td></tr>
+          <tr><td>Max drawdown</td><td>−5.3%</td><td>−1.4%</td></tr>
+          <tr><td>Assignment rate</td><td>2.9%</td><td>0.0%</td></tr>
         </tbody>
       </table>
       <div class="highlight">
-        Key takeaway: the current hypothesis remained positive out of sample, with relatively low reported drawdown and strong trade-level expectancy.
+        v2 only changed operating caps (weekly count, sleeve %). Contract selection, IVR, delta, DTE, and 50%/2× exits are unchanged versus this snapshot.
+      </div>
+    </section>
+
+    <section class="grid-2">
+      <div class="section">
+        <h2>Long equity desk</h2>
+        <p>Separate swing workflow. Codified and supervised, but <strong>dry-run only</strong> — live stock orders are not enabled.</p>
+        <ul class="clean">
+          <li>Pre-filter: ≥3 of 5 liquidity / participation checks</li>
+          <li>Scorecard: EMA stack, RSI 50–65, MACD turn, volume &gt; 1.3×</li>
+          <li>Setups: breakout, EMA pullback, MACD cross, trend continuation</li>
+          <li>Stop: max(EMA21, price − 1.5 ATR); targets 1.5R / 2.5R</li>
+          <li>Managed exits: scale-out at 1R / 2R + trailing stop in the paper book</li>
+          <li>Risk: 3% default, 5% hard cap, size = risk / stop distance</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>How the processes run</h2>
+        <ul class="clean">
+          <li><strong>CSP:</strong> <span class="pill blue">main.py --optionsdesk-live</span></li>
+          <li><strong>Sleeve E:</strong> <span class="pill blue">engine/sleeve_e_supervisor.py</span></li>
+          <li><strong>Equity:</strong> <span class="pill amber">main.py --live-supervised</span> (dry-run)</li>
+          <li><strong>VOLHARVEST:</strong> <span class="pill amber">--volharvest-supervised</span> (paper / Telegram)</li>
+        </ul>
+        <div class="highlight">
+          Each sleeve is its own process and IB clientId. They do not start each other. Telegram STOP / PAUSE / PANIC still apply per engine.
+        </div>
       </div>
     </section>
 
     <section class="section">
-      <h2>9. Practical Notes</h2>
+      <h2>Operating notes</h2>
       <ul class="clean">
-        <li>A meaningful number of candidate trades are filtered out before entry; the strategy is deliberately selective rather than always-on.</li>
-        <li>Backtest skip behavior shows a large number of exclusions from gap-related conditions, reinforcing the strategy's focus on avoiding unstable setups.</li>
-        <li>The desk is best described as a <strong>systematic income sleeve</strong> with explicit capital caps, regime gating, and collateral-first execution.</li>
+        <li>Account is SGD-base / USD stocks; cash can print negative while NAV stays healthy (margin). That is not an options P&amp;L issue.</li>
+        <li>CSP and Sleeve E can run on live TWS together via the clientId pool (OptionsDesk keeps 5; Sleeve E takes the next free id).</li>
+        <li>Illiquid after-hours option quotes are skipped at trade-build, not auto-filled.</li>
+        <li>The desk remains collateral-first: no CSP without full cash security inside the sleeve cap.</li>
       </ul>
     </section>
 
-    <section class="section">
-      <h2>10. Long Equity Desk Criteria</h2>
-      <p>
-        The long equity desk is a separate swing-trading workflow built around trend, momentum, and volume confirmation.
-        It is currently a paper / dry-run process, but the selection and sizing logic are fully codified.
-      </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Stage</th>
-            <th>Rule</th>
-            <th>Interpretation</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Initial pre-filter</td>
-            <td>Must pass at least 3 of 5 checks</td>
-            <td>Fast first pass to eliminate weak or illiquid names before full signal scoring.</td>
-          </tr>
-          <tr>
-            <td>5 pre-checks</td>
-            <td>Price &gt; $5, volume spike &gt; 1.2x average, not down more than 8% day-on-day, minimum absolute volume, positive day close</td>
-            <td>Looks for tradeable names with live participation and no immediate breakdown behavior.</td>
-          </tr>
-          <tr>
-            <td>Extended liquidity filter</td>
-            <td>20-day avg volume &gt;= 500k, price &gt;= $10, dollar volume &gt;= $5m</td>
-            <td>Ensures the broader universe remains liquid enough for swing deployment.</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="grid-2">
-      <div class="section">
-        <h2>11. Equity Signal Scorecard</h2>
-        <ul class="clean">
-          <li><strong>+15:</strong> close above EMA21</li>
-          <li><strong>+10:</strong> close above EMA50</li>
-          <li><strong>+10:</strong> close above EMA200</li>
-          <li><strong>+20:</strong> EMA8 crossed above EMA21 in the last 3 bars</li>
-          <li><strong>+15:</strong> RSI(14) between 50 and 65</li>
-          <li><strong>+15:</strong> MACD histogram turned positive in the last 2 bars</li>
-          <li><strong>+15:</strong> volume ratio above 1.3x 20-day average</li>
-        </ul>
-        <div class="highlight">
-          Score tiers: <strong>Strong Buy &gt;= 95</strong>, <strong>Watch &gt;= 80</strong>, <strong>Neutral &gt;= 65</strong>, otherwise Weak.
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>12. Equity Setup Types</h2>
-        <ul class="clean">
-          <li><strong>Breakout:</strong> recent EMA8/EMA21 cross plus strong volume expansion</li>
-          <li><strong>EMA Pullback:</strong> price above EMA21 but still close to short-term trend support</li>
-          <li><strong>MACD Cross:</strong> momentum inflection as MACD histogram turns positive</li>
-          <li><strong>Trend Continuation:</strong> trend remains intact even without a fresh crossover trigger</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="grid-2">
-      <div class="section">
-        <h2>13. Equity Entry, Stop, and Targets</h2>
-        <ul class="clean">
-          <li><strong>Entry zone:</strong> current price plus/minus 0.5 ATR</li>
-          <li><strong>Primary stop:</strong> max of EMA21 or price minus 1.5 ATR</li>
-          <li><strong>Target 1:</strong> 1.5R from entry</li>
-          <li><strong>Target 2:</strong> 2.5R from entry</li>
-        </ul>
-        <div class="highlight">
-          The stop framework mixes trend structure and volatility, rather than using a fixed percentage stop.
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>14. Equity Sizing Rules</h2>
-        <ul class="clean">
-          <li><strong>Default risk per trade:</strong> 3% of capital</li>
-          <li><strong>Hard cap:</strong> 5% of capital per trade</li>
-          <li><strong>Position size:</strong> risk budget divided by stop distance</li>
-          <li><strong>Warning flag:</strong> if capital used exceeds 25% of account</li>
-        </ul>
-        <div class="highlight">
-          This means the equity desk sizes positions off downside risk first, not off conviction alone.
-        </div>
-      </div>
-    </section>
-
-    <div class="footer">Prepared from the current SwingDesk OptionsDesk and long-equity rulesets, scan filters, and saved report outputs.</div>
+    <div class="footer">Updated Aug 2026 from live SwingDesk engines (CSP v2, Sleeve E v1, equity dry-run, VOLHARVEST paper). Replaces the Jul post-meeting single-sleeve note.</div>
   </div>
 </body>
 </html>
