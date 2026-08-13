@@ -3,222 +3,294 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SwingDesk · Multi-Sleeve Update</title>
+  <title>SwingDesk · Architecture</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --ink: #182028;
-      --muted: #5f6f7d;
-      --line: #d8e0e7;
-      --bg: #f4f7fb;
-      --surface: #ffffff;
-      --blue: #1e4d82;
-      --blue-soft: #e9f1fb;
-      --green: #0c6b49;
-      --green-soft: #ddf3e8;
-      --amber: #8a6511;
-      --amber-soft: #f8efd5;
-      --red: #9f3c32;
-      --red-soft: #f8e5e1;
+      --ink: #1a1f1c;
+      --muted: #5c6b64;
+      --line: #dde3df;
+      --bg: #f4f5f3;
+      --surface: #fff;
+      --equity: #2a5c4e;
+      --equity-bg: #e9f1ee;
+      --options: #1e4d82;
+      --options-bg: #eaf0f7;
+      --earn: #5a3d7a;
+      --earn-bg: #f0eaf6;
+      --live: #0b6b4a;
+      --live-bg: #d8f0e5;
+      --paper: #7a6418;
+      --paper-bg: #f3ecd8;
+      --warn: #8a3d2e;
+      --warn-bg: #f3e5e0;
       --mono: "IBM Plex Mono", ui-monospace, monospace;
       --sans: "DM Sans", system-ui, sans-serif;
     }
 
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: var(--sans);
       color: var(--ink);
-      background: linear-gradient(180deg, #eef4fa 0%, var(--bg) 100%);
-      line-height: 1.5;
+      background: var(--bg);
+      line-height: 1.45;
+      font-size: 15px;
     }
 
-    .page {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 32px 20px 56px;
-    }
+    .shell { max-width: 980px; margin: 0 auto; padding: 32px 20px 72px; }
 
-    .hero {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      padding: 28px;
-      margin-bottom: 16px;
+    header {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--line);
     }
-
-    .kicker {
+    header .kicker {
       font-family: var(--mono);
       font-size: 11px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+    }
+    header h1 {
+      margin: 0 0 18px;
+      font-size: clamp(1.6rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
-    h1 {
-      margin: 0 0 12px;
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      line-height: 1.06;
-      letter-spacing: -0.03em;
+    .status-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
+    @media (max-width: 700px) { .status-row { grid-template-columns: 1fr; } }
 
-    .subtitle {
+    .status {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 14px 16px;
+    }
+    .status.equity { border-left: 3px solid var(--equity); }
+    .status.options { border-left: 3px solid var(--options); }
+    .status.earn { border-left: 3px solid var(--earn); }
+    .status.vh { border-left: 3px solid var(--paper); }
+    .status h2 {
+      margin: 8px 0 10px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .status ul {
       margin: 0;
-      max-width: 860px;
+      padding-left: 1.15rem;
       color: var(--muted);
-      font-size: 1rem;
     }
-
-    .badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 16px;
-    }
+    .status li { margin-bottom: 4px; }
+    .status li strong { color: var(--ink); font-weight: 600; }
 
     .badge {
       display: inline-block;
-      padding: 4px 8px;
       font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.04em;
+      font-size: 10px;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
+      padding: 3px 7px;
+    }
+    .badge.paper { background: var(--paper-bg); color: var(--paper); }
+    .badge.live { background: var(--live-bg); color: var(--live); }
+    .badge.locked { background: var(--warn-bg); color: var(--warn); }
+    .badge.built { background: var(--equity-bg); color: var(--equity); }
+    .badge.earn { background: var(--earn-bg); color: var(--earn); }
+
+    nav.tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 28px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: color-mix(in srgb, var(--bg) 94%, transparent);
+      backdrop-filter: blur(6px);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    nav.tabs button {
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      font-weight: 500;
       border: 1px solid var(--line);
-      background: #f8fafc;
+      background: var(--surface);
+      color: var(--ink);
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+    nav.tabs button.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
     }
 
-    .badge.live { background: var(--green-soft); color: var(--green); border-color: #b7dcc8; }
-    .badge.rules { background: var(--blue-soft); color: var(--blue); border-color: #cadef4; }
-    .badge.risk { background: var(--amber-soft); color: var(--amber); border-color: #eddba0; }
+    section.panel { display: none; }
+    section.panel.active { display: block; }
 
-    .grid-4 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 18px;
+    h2.section {
+      margin: 0 0 16px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    h3:first-child { margin-top: 0; }
+
+    .block {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 16px 18px;
+      margin-bottom: 12px;
+    }
+
+    ul.clean {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: var(--muted);
+    }
+    ul.clean li { margin-bottom: 5px; }
+    ul.clean li strong { color: var(--ink); font-weight: 600; }
 
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    @media (max-width: 900px) {
-      .grid-4 { grid-template-columns: 1fr 1fr; }
-      .grid-2 { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 560px) {
-      .grid-4 { grid-template-columns: 1fr; }
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      padding: 16px 18px;
-    }
-
-    .card-label {
-      font-family: var(--mono);
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .card-value {
-      font-size: 1.35rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 4px;
-    }
-
-    .card-note {
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .section {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      padding: 20px 22px;
       margin-bottom: 12px;
     }
+    @media (max-width: 720px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    .section h2 {
-      margin: 0 0 12px;
-      font-size: 1.2rem;
-      letter-spacing: -0.02em;
-    }
-
-    .section p {
-      margin: 0 0 10px;
+    .meta {
+      font-family: var(--mono);
+      font-size: 11px;
       color: var(--muted);
+      margin-bottom: 8px;
     }
 
-    ul.clean {
-      margin: 0;
-      padding-left: 1.1rem;
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 16px;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+    }
+    .flow .step {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+    .flow .arrow {
       color: var(--muted);
-    }
-
-    ul.clean li { margin-bottom: 7px; }
-    ul.clean strong { color: var(--ink); }
-
-    .highlight {
-      border-left: 3px solid var(--blue);
-      background: #f8fbff;
-      padding: 12px 14px;
-      color: var(--ink);
-      margin-top: 12px;
+      font-family: var(--mono);
+      font-size: 12px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 12px;
-      font-size: 0.93rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      font-size: 0.88rem;
+      margin-bottom: 12px;
     }
-
     th, td {
       text-align: left;
-      vertical-align: top;
-      padding: 10px 12px;
+      padding: 9px 12px;
       border-bottom: 1px solid var(--line);
+      vertical-align: top;
     }
-
     th {
-      background: #eef3f7;
-      color: var(--muted);
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    tr:last-child td { border-bottom: none; }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 999px;
-      font-size: 0.78rem;
+      background: #ecefeb;
+      font-size: 0.72rem;
       font-weight: 600;
-      border: 1px solid transparent;
-      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    tr:last-child td { border-bottom: none; }
+    code, .mono {
+      font-family: var(--mono);
+      font-size: 0.84em;
+      background: #ecefeb;
+      padding: 1px 4px;
     }
 
-    .pill.green { background: var(--green-soft); color: var(--green); border-color: #b7dcc8; }
-    .pill.amber { background: var(--amber-soft); color: var(--amber); border-color: #eddba0; }
-    .pill.red { background: var(--red-soft); color: var(--red); border-color: #ebc0ba; }
-    .pill.blue { background: var(--blue-soft); color: var(--blue); border-color: #cadef4; }
+    .stack {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 800px) { .stack { grid-template-columns: 1fr 1fr; } }
+    .stack .item {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 12px;
+    }
+    .stack .label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .stack .value { font-weight: 600; font-size: 0.92rem; }
 
-    .footer {
-      margin-top: 14px;
+    .tree {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: #1a1f1c;
+      color: #d4ddd7;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.55;
+    }
+    .tree .eq { color: #7dcea0; }
+    .tree .op { color: #7eb6e8; }
+    .tree .se { color: #c9a0dc; }
+    .tree .vh { color: #e0c26e; }
+    .tree .cv { color: #d4a0c8; }
+    .tree .dim { color: #6a7a72; }
+
+    .diagram {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 12px;
+      margin-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    footer {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
       font-family: var(--mono);
       font-size: 11px;
       color: var(--muted);
@@ -226,220 +298,717 @@
   </style>
 </head>
 <body>
-  <div class="page">
-    <section class="hero">
-      <div class="kicker">SwingDesk / Multi-Sleeve Update · Aug 2026</div>
-      <h1>Three live sleeves, one risk stack</h1>
-      <p class="subtitle">
-        Since the post-meeting summary, the desk has moved from a single CSP workflow to a multi-process stack:
-        cash-secured puts, earnings IV crush, and long equity — each a separate engine, sharing IBKR, Telegram, and capital caps.
-      </p>
-      <div class="badges">
-        <span class="badge live">CSP Live</span>
-        <span class="badge live">Sleeve E Live</span>
-        <span class="badge risk">Equity Dry-Run</span>
-        <span class="badge rules">VOLHARVEST Paper</span>
+  <div class="shell">
+    <header>
+      <div class="kicker">SwingDesk · architecture · Aug 2026 update</div>
+      <h1>Equity vs Options vs Earnings</h1>
+      <div class="status-row">
+        <div class="status equity">
+          <span class="badge paper">Not active · dry-run</span>
+          <h2>Long Equity Desk</h2>
+          <ul>
+            <li>Full swing toolkit (scan, size, journal, backtest)</li>
+            <li><strong>Not running live</strong> — paper / dry-run only</li>
+            <li>Scale-out + trail in the paper book; live stock bridge off</li>
+          </ul>
+        </div>
+        <div class="status options">
+          <span class="badge live">Live · CSP v2</span>
+          <h2>OptionsDesk</h2>
+          <ul>
+            <li><strong>Live</strong> on IBKR <code>7496</code> / clientId <code>5</code></li>
+            <li>Cash-secured puts · ticker-level dedupe · 50% / 2×</li>
+            <li>Sleeve cap 80% NAV · max 15 new trades / week</li>
+          </ul>
+        </div>
+        <div class="status earn">
+          <span class="badge live">Live · Sleeve E</span>
+          <h2>Earnings IV Crush</h2>
+          <ul>
+            <li>Separate process · own IB clientId from the pool</li>
+            <li>1–3 DTE to print · defined-risk verticals</li>
+            <li>Auto-close morning after earnings</li>
+          </ul>
+        </div>
+        <div class="status vh">
+          <span class="badge locked">Paper · live locked</span>
+          <h2>VOLHARVEST</h2>
+          <ul>
+            <li>Defined-risk iron condors (sleeves A / B / C)</li>
+            <li>Risk Officer bans naked / CSP in this path</li>
+            <li>Papers beside live desks until gate clears</li>
+          </ul>
+        </div>
       </div>
-    </section>
+    </header>
 
-    <section class="grid-4">
-      <div class="card">
-        <div class="card-label">CSP Desk</div>
-        <div class="card-value">Live</div>
-        <div class="card-note">Hypothesis v2 · ticker-level dedupe · 50% / 2× exits</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Sleeve E</div>
-        <div class="card-value">Live</div>
-        <div class="card-note">Earnings IV crush · verticals · close morning after</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Long Equity</div>
-        <div class="card-value">Dry-run</div>
-        <div class="card-note">Swing scorecard · scale-out / trail · no live stock bridge yet</div>
-      </div>
-      <div class="card">
-        <div class="card-label">VOLHARVEST</div>
-        <div class="card-value">Paper</div>
-        <div class="card-note">IV–RV harvest supervised · Telegram only, no IB orders</div>
-      </div>
-    </section>
+    <nav class="tabs" aria-label="Sections">
+      <button type="button" class="active" data-tab="overview">Overview</button>
+      <button type="button" data-tab="equity">Equity</button>
+      <button type="button" data-tab="csp">CSP</button>
+      <button type="button" data-tab="sleeve-e">Sleeve E</button>
+      <button type="button" data-tab="volharvest">VOLHARVEST</button>
+      <button type="button" data-tab="stack">Tech Stack</button>
+      <button type="button" data-tab="arch">Architecture</button>
+    </nav>
 
-    <section class="section">
-      <h2>What changed since the last published note</h2>
+    <!-- Overview -->
+    <section id="overview" class="panel active">
+      <h2 class="section">Overview</h2>
+
+      <div class="block">
+        <ul class="clean">
+          <li>Single Python monorepo under <code>swingdesk/</code></li>
+          <li>Shared IBKR + Telegram + CLI across desks</li>
+          <li>Each sleeve is its <strong>own process</strong> and IB clientId — they do not start each other</li>
+          <li>Equity = built, parked on paper · CSP + Sleeve E = live capital · VOLHARVEST = paper</li>
+        </ul>
+      </div>
+
+      <div class="tree"><span class="dim">swingdesk/</span>
+├── <span class="eq">modules/</span> + <span class="eq">backtester/</span>     <span class="dim">→ Long Equity (dry-run)</span>
+├── <span class="op">optionsdesk/</span>               <span class="dim">→ OptionsDesk CSP (live v2)</span>
+├── <span class="se">engine/sleeve_e_supervisor</span>  <span class="dim">→ Earnings IV crush (live)</span>
+├── <span class="vh">desk/</span>                      <span class="dim">→ VOLHARVEST (paper · live locked)</span>
+└── <span class="cv">conviction/</span>                <span class="dim">→ Discretionary book (no auto orders)</span></div>
+
       <table>
         <thead>
           <tr>
-            <th>Sleeve</th>
-            <th>Update</th>
-            <th>Why it matters</th>
+            <th>Desk</th>
+            <th>What</th>
+            <th>Why</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>CSP</td>
-            <td>Hypothesis v2: weekly new-trade cap <strong>2 → 15</strong>; options sleeve cap <strong>40% → 80%</strong> of NAV</td>
-            <td>Unblocks the 3/day session limit and uses more of available collateral without changing per-trade 5% max.</td>
+            <td><strong>Long Equity</strong><br /><code>modules/</code></td>
+            <td>
+              <ul class="clean">
+                <li>Multi-market stock signals</li>
+                <li>Sizing, journal, backtests</li>
+                <li>Telegram supervised loop + scale-out</li>
+              </ul>
+            </td>
+            <td>Repeatable swing process with risk rules</td>
+            <td><span class="badge paper">Dry-run</span></td>
           </tr>
           <tr>
-            <td>CSP</td>
-            <td>Dedupe is now <strong>one name at a time</strong> (ticker + live short-put check), not ticker|expiry|strike</td>
-            <td>Stops a second CSP when spot drifts and delta targeting picks a nearby strike (the CPNG $15 / $15.50 case).</td>
+            <td><strong>OptionsDesk CSP</strong><br /><code>optionsdesk/</code></td>
+            <td>
+              <ul class="clean">
+                <li>IV rank → regime → CSP</li>
+                <li>50% TP / 2× stop</li>
+                <li>One name at a time</li>
+              </ul>
+            </td>
+            <td>Harvest elevated put premium systematically</td>
+            <td><span class="badge live">Live v2</span></td>
           </tr>
           <tr>
-            <td>CSP</td>
-            <td>Skip illiquid / no-bid contracts at build time; IB clientId pool so sleeves don’t collide</td>
-            <td>After-hours empty quotes no longer look like fills; OptionsDesk and Sleeve E can run together.</td>
+            <td><strong>Sleeve E</strong><br /><code>sleeve_e_supervisor</code></td>
+            <td>
+              <ul class="clean">
+                <li>1–3 DTE to earnings</li>
+                <li>Directional vertical (or YES NAKED)</li>
+                <li>Close morning after print</li>
+              </ul>
+            </td>
+            <td>Own the event window CSP is banned from</td>
+            <td><span class="badge live">Live</span></td>
           </tr>
           <tr>
-            <td>Sleeve E</td>
-            <td>New earnings IV-crush engine: 1–3 DTE window, IVR ≥ 65, defined-risk vertical, optional naked override</td>
-            <td>Separate process from CSP; auto-closes the morning after earnings.</td>
+            <td><strong>VOLHARVEST</strong><br /><code>desk/</code></td>
+            <td>
+              <ul class="clean">
+                <li>Defined-risk iron condors</li>
+                <li>Sleeves A / B / C</li>
+                <li>Risk Officer bans naked/CSP</li>
+              </ul>
+            </td>
+            <td>Same vol edge without unbounded put risk</td>
+            <td><span class="badge locked">Paper · locked</span></td>
           </tr>
           <tr>
-            <td>Equity</td>
-            <td>Confirming-signal gate + managed scale-out (1R / 2R) and trailing stop in paper book</td>
-            <td>Same exit logic as backtest; live stock execution still not enabled.</td>
+            <td><strong>Conviction</strong><br /><code>conviction/</code></td>
+            <td>
+              <ul class="clean">
+                <li>Manual thesis book</li>
+                <li>Chain / size helpers</li>
+              </ul>
+            </td>
+            <td>Keep discretion outside the live quant path</td>
+            <td><span class="badge built">Advisory</span></td>
           </tr>
         </tbody>
       </table>
+
+      <h3>Shared infrastructure</h3>
+      <div class="grid-2">
+        <div class="block">
+          <div class="meta">Broker &amp; ops</div>
+          <ul class="clean">
+            <li><strong>IBKR</strong> via <code>ib_insync</code> — one TWS host, clientId pool</li>
+            <li><strong>Telegram</strong> — approve / STATUS / STOP / PAUSE / PANIC</li>
+            <li><strong>config.py + .env</strong> — capital, ports, keys</li>
+            <li><strong>main.py</strong> — unified CLI + CSP / equity launchers</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="meta">Data &amp; storage</div>
+          <ul class="clean">
+            <li><strong>Universe builders</strong> — liquid US / sector lists</li>
+            <li><strong>IBKR + yfinance</strong> — bars, IV, regime</li>
+            <li><strong>SQLite / CSV / JSONL</strong> — journals, fills, scan logs</li>
+            <li><strong>reports/ + webdash :7800</strong> — local ops view</li>
+          </ul>
+        </div>
+      </div>
     </section>
 
-    <section class="grid-2">
-      <div class="section">
-        <h2>CSP — still the core income sleeve</h2>
+    <!-- Equity -->
+    <section id="equity" class="panel">
+      <h2 class="section">Long Equity Desk <span class="badge paper">Not active · dry-run</span></h2>
+
+      <div class="block">
+        <div class="meta">Purpose</div>
         <ul class="clean">
-          <li><strong>Universe:</strong> top 100 liquid US names</li>
-          <li><strong>Entry:</strong> IV Rank ≥ 70, 7–14 DTE, delta 0.20–0.30</li>
-          <li><strong>Exits:</strong> take profit at 50% of credit; stop at 2× premium</li>
-          <li><strong>Sizing:</strong> max 5% NAV per trade, max 5 open, regime-scaled</li>
-          <li><strong>Collateral:</strong> fully cash-secured; sleeve ≤ 80% NAV</li>
-          <li><strong>Ops:</strong> auto-approve optional; STOP / PAUSE / PANIC on Telegram</li>
+          <li>Scan US / HK / SG for swing setups</li>
+          <li>Score with EMA / RSI / MACD / volume / ATR</li>
+          <li>Size by risk, journal every trade, backtest edge</li>
+          <li>Telegram YES/NO overnight loop — <strong>no live stock orders</strong></li>
         </ul>
-        <div class="highlight">
-          Auto-exit does <em>not</em> unwind “shouldn’t have opened” trades. Only 50% / 2× marks fire a buy-to-close.
+      </div>
+
+      <h3>Pipeline</h3>
+      <div class="flow">
+        <span class="step">Market data</span><span class="arrow">→</span>
+        <span class="step">Signals</span><span class="arrow">→</span>
+        <span class="step">Confirming gate</span><span class="arrow">→</span>
+        <span class="step">Size &amp; journal</span><span class="arrow">→</span>
+        <span class="step">Supervised (dry-run)</span><span class="arrow">→</span>
+        <span class="step">Scale-out / trail</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="block">
+          <div class="meta">modules/</div>
+          <ul class="clean">
+            <li><strong>ibkr_client</strong> — TWS connect; clientId pool; <code>--paper</code> → 7497</li>
+            <li><strong>scanner</strong> — multi-market scan pipeline</li>
+            <li><strong>signals</strong> — indicator scoring (0–100)</li>
+            <li><strong>sizer</strong> — stock + option risk sizing</li>
+            <li><strong>journal</strong> — SQLite trade log</li>
+            <li><strong>equity_paper_book</strong> — simulated fills + scale-out state</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="meta">engine / desk / helpers</div>
+          <ul class="clean">
+            <li><strong>supervised.py</strong> — overnight loop, Kelly, news</li>
+            <li><strong>confirming_signals</strong> — optional paid overlays</li>
+            <li><strong>trade_manager</strong> — 1R / 2R scale-out + trail</li>
+            <li><strong>telegram_bot</strong> — alerts &amp; emergency cmds</li>
+            <li><strong>backtester/</strong> — replay, metrics, regime</li>
+          </ul>
         </div>
       </div>
 
-      <div class="section">
-        <h2>Sleeve E — earnings IV crush</h2>
-        <ul class="clean">
-          <li><strong>Window:</strong> 1–3 days to earnings</li>
-          <li><strong>IVR floor:</strong> 65</li>
-          <li><strong>Skip:</strong> implied move &gt; 25%</li>
-          <li><strong>Default structure:</strong> directional vertical (put credit if bullish, call credit if bearish)</li>
-          <li><strong>Short delta:</strong> ~0.22; wing ~8% away</li>
-          <li><strong>Naked CSP:</strong> only if implied move &lt; 15% and human replies YES NAKED</li>
-          <li><strong>Exit:</strong> 50% / 2× in session; looser 30% target the morning after print</li>
-          <li><strong>Scan:</strong> top 200 liquid names (or a pinned watchlist)</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>CSP entry filters (unchanged thesis)</h2>
       <table>
         <thead>
           <tr>
-            <th>Filter</th>
             <th>Rule</th>
-            <th>Why</th>
+            <th>Detail</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Volatility</td>
-            <td><span class="pill blue">IV Rank ≥ 70</span></td>
-            <td>Only sell premium when it is rich versus the name’s recent history.</td>
+            <td>Pre-filter</td>
+            <td>Must pass ≥3 of 5: price &gt; $5, vol spike &gt; 1.2×, not down &gt; 8% DoD, min volume, positive close</td>
           </tr>
           <tr>
-            <td>Earnings</td>
-            <td><span class="pill red">No earnings within 5 days</span></td>
-            <td>CSP sleeve stays away from the event; Sleeve E owns that window.</td>
+            <td>Liquidity</td>
+            <td>20d avg vol ≥ 500k, price ≥ $10, dollar volume ≥ $5m</td>
           </tr>
           <tr>
-            <td>Quote quality</td>
-            <td><span class="pill blue">Live bid/ask required</span></td>
-            <td>No-bid / after-hours empty chain is skipped, not filled on last/mid.</td>
+            <td>Scorecard</td>
+            <td>EMA21/50/200, EMA8×21 cross, RSI 50–65, MACD turn, volume &gt; 1.3× → Strong Buy ≥ 95</td>
           </tr>
           <tr>
-            <td>Regime</td>
-            <td><span class="pill green">Bull = full</span> <span class="pill amber">Range = reduced</span> <span class="pill red">Bear / choppy = stand down</span></td>
-            <td>Short-vol only when the tape is not hostile.</td>
+            <td>Stop / targets</td>
+            <td>Stop = max(EMA21, price − 1.5 ATR) · T1 1.5R · T2 2.5R</td>
           </tr>
           <tr>
-            <td>Name uniqueness</td>
-            <td><span class="pill amber">One short-put name at a time</span></td>
-            <td>Strike drift cannot open a second CSP on the same underlying.</td>
+            <td>Managed exits</td>
+            <td>Scale out 33% at 1R and 2R, then trail remaining</td>
+          </tr>
+          <tr>
+            <td>Sizing</td>
+            <td>3% risk default, 5% hard cap · size = risk budget / stop distance</td>
           </tr>
         </tbody>
       </table>
+
+      <div class="block">
+        <div class="meta">Launch</div>
+        <ul class="clean">
+          <li><code>python main.py --live-supervised</code> — dry-run even with <code>--execute</code></li>
+          <li>Do not run <code>engine/supervised.py</code> directly (path / <code>config</code> import)</li>
+        </ul>
+      </div>
     </section>
 
-    <section class="section">
-      <h2>CSP backtest snapshot (hypothesis still the same contract rules)</h2>
+    <!-- CSP -->
+    <section id="csp" class="panel">
+      <h2 class="section">OptionsDesk CSP <span class="badge live">Live · v2</span></h2>
+
+      <div class="block">
+        <div class="meta">Purpose</div>
+        <ul class="clean">
+          <li>Sell cash-secured puts when IV rank is elevated</li>
+          <li>SPY regime gate blocks hostile tape</li>
+          <li>Frozen hypothesis — retune = new version</li>
+          <li>Telegram auto-approve optional; STOP / PAUSE / PANIC always on</li>
+        </ul>
+      </div>
+
+      <div class="block">
+        <div class="meta">HYPOTHESIS_V2 · active</div>
+        <ul class="clean">
+          <li><strong>Entry</strong> — IVR ≥ 70 · ~0.25Δ put · 7–14 DTE (target 10) · spread ≤ 20% of mid</li>
+          <li><strong>Exits</strong> — take profit 50% of credit · stop at 2× premium · mark = live ask</li>
+          <li><strong>Risk</strong> — max 5 positions · max 15 new/week · ≤5% capital / trade · sleeve ≤ 80% NAV</li>
+          <li><strong>Dedupe</strong> — one underlying at a time (ticker + live short-put check), not strike</li>
+          <li><strong>Skip</strong> — earnings within 5 days (Sleeve E owns that) · no-bid / illiquid chain</li>
+          <li><strong>Regime</strong> — block bear &amp; high-vol choppy · reduced size in ranging</li>
+        </ul>
+      </div>
+
+      <h3>Live path</h3>
+      <div class="flow">
+        <span class="step">Universe (top 100)</span><span class="arrow">→</span>
+        <span class="step">IV Rank + regime</span><span class="arrow">→</span>
+        <span class="step">Build CSP</span><span class="arrow">→</span>
+        <span class="step">Ticker dedupe</span><span class="arrow">→</span>
+        <span class="step">Approve / auto</span><span class="arrow">→</span>
+        <span class="step">Execute + 50%/2×</span>
+      </div>
+
+      <div class="block">
+        <div class="meta">optionsdesk/ + engine/</div>
+        <ul class="clean">
+          <li><strong>scanner</strong> — universe → candidates by IVR / liquidity / capital</li>
+          <li><strong>regime_gate</strong> — SPY ADX + VIX percentile → scalar / block (V2)</li>
+          <li><strong>trade_builder</strong> — strike, DTE, collateral; skip empty quotes</li>
+          <li><strong>executor</strong> — live sell-put / buy-to-close; ticker keys in the fill log</li>
+          <li><strong>capital_pool</strong> — collateral vs IB NetLiq + sleeve %</li>
+          <li><strong>optionsdesk_supervised</strong> — scan / exit / heartbeat loop</li>
+        </ul>
+      </div>
+
+      <h3>Backtest snapshot (same contract rules; v2 only changed ops caps)</h3>
       <table>
         <thead>
           <tr>
             <th>Metric</th>
-            <th>In-Sample (2021–2023)</th>
-            <th>Out-of-Sample (2024–2025)</th>
+            <th>In-sample 2021–2023</th>
+            <th>Out-of-sample 2024–2025</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td>Total trades</td><td>105</td><td>79</td></tr>
+          <tr><td>Trades</td><td>105</td><td>79</td></tr>
           <tr><td>Win rate</td><td>92.4%</td><td>97.5%</td></tr>
-          <tr><td>Expectancy per trade</td><td>$38.56</td><td>$27.70</td></tr>
+          <tr><td>Expectancy</td><td>$38.56</td><td>$27.70</td></tr>
           <tr><td>Profit factor</td><td>5.98</td><td>25.13</td></tr>
-          <tr><td>Total P&amp;L</td><td>$4,048.73</td><td>$2,188.52</td></tr>
-          <tr><td>Max drawdown</td><td>−5.3%</td><td>−1.4%</td></tr>
-          <tr><td>Assignment rate</td><td>2.9%</td><td>0.0%</td></tr>
+          <tr><td>P&amp;L</td><td>$4,049</td><td>$2,189</td></tr>
+          <tr><td>Max DD</td><td>−5.3%</td><td>−1.4%</td></tr>
+          <tr><td>Assignment</td><td>2.9%</td><td>0.0%</td></tr>
         </tbody>
       </table>
-      <div class="highlight">
-        v2 only changed operating caps (weekly count, sleeve %). Contract selection, IVR, delta, DTE, and 50%/2× exits are unchanged versus this snapshot.
+
+      <div class="block">
+        <div class="meta">Launch</div>
+        <ul class="clean">
+          <li><code>python main.py --optionsdesk-live --execute --live-account --auto-approve --force-scan --optionsdesk-universe 100</code></li>
+        </ul>
       </div>
     </section>
 
-    <section class="grid-2">
-      <div class="section">
-        <h2>Long equity desk</h2>
-        <p>Separate swing workflow. Codified and supervised, but <strong>dry-run only</strong> — live stock orders are not enabled.</p>
+    <!-- Sleeve E -->
+    <section id="sleeve-e" class="panel">
+      <h2 class="section">Sleeve E · Earnings IV Crush <span class="badge live">Live</span></h2>
+
+      <div class="block">
+        <div class="meta">Purpose</div>
         <ul class="clean">
-          <li>Pre-filter: ≥3 of 5 liquidity / participation checks</li>
-          <li>Scorecard: EMA stack, RSI 50–65, MACD turn, volume &gt; 1.3×</li>
-          <li>Setups: breakout, EMA pullback, MACD cross, trend continuation</li>
-          <li>Stop: max(EMA21, price − 1.5 ATR); targets 1.5R / 2.5R</li>
-          <li>Managed exits: scale-out at 1R / 2R + trailing stop in the paper book</li>
-          <li>Risk: 3% default, 5% hard cap, size = risk / stop distance</li>
+          <li>Own the 1–3 DTE earnings window that CSP explicitly skips</li>
+          <li>Default structure is a <strong>defined-risk vertical</strong> (put credit if bullish, call credit if bearish)</li>
+          <li>Naked CSP only with explicit Telegram <code>YES NAKED</code> when implied move is small</li>
+          <li>Unconditional morning-after close to harvest crush</li>
         </ul>
       </div>
 
-      <div class="section">
-        <h2>How the processes run</h2>
+      <div class="block">
+        <div class="meta">EARNINGS_SLEEVE_V1 · registered 2026-08-03</div>
         <ul class="clean">
-          <li><strong>CSP:</strong> <span class="pill blue">main.py --optionsdesk-live</span></li>
-          <li><strong>Sleeve E:</strong> <span class="pill blue">engine/sleeve_e_supervisor.py</span></li>
-          <li><strong>Equity:</strong> <span class="pill amber">main.py --live-supervised</span> (dry-run)</li>
-          <li><strong>VOLHARVEST:</strong> <span class="pill amber">--volharvest-supervised</span> (paper / Telegram)</li>
+          <li><strong>Window</strong> — 1–3 days to earnings · universe top 200 liquid (or pinned watchlist)</li>
+          <li><strong>IVR</strong> — ≥ 65 · skip if implied move &gt; 25%</li>
+          <li><strong>Short delta</strong> — ~0.22 · wing ~8% away</li>
+          <li><strong>Naked flag</strong> — implied move &lt; 15% then human override</li>
+          <li><strong>Exits</strong> — 50% / 2× in session · 30% target morning after print</li>
+          <li><strong>Size</strong> — 2% NAV risk on spread max-loss · 5% NAV collateral if naked · max 5 contracts</li>
         </ul>
-        <div class="highlight">
-          Each sleeve is its own process and IB clientId. They do not start each other. Telegram STOP / PAUSE / PANIC still apply per engine.
+      </div>
+
+      <h3>Live path</h3>
+      <div class="flow">
+        <span class="step">Liquid universe</span><span class="arrow">→</span>
+        <span class="step">Earnings calendar</span><span class="arrow">→</span>
+        <span class="step">IVR + implied move</span><span class="arrow">→</span>
+        <span class="step">Build vertical</span><span class="arrow">→</span>
+        <span class="step">Telegram YES</span><span class="arrow">→</span>
+        <span class="step">Hold through print</span><span class="arrow">→</span>
+        <span class="step">Close AM after</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="block">
+          <div class="meta">Code</div>
+          <ul class="clean">
+            <li><strong>sleeve_e_supervisor</strong> — scan / approve / exit loop</li>
+            <li><strong>sleeve_e_signal</strong> — direction + structure</li>
+            <li><strong>earnings_researcher</strong> — card for Telegram</li>
+            <li><strong>IVHistoryCache</strong> — IVR for the name</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="meta">Ops</div>
+          <ul class="clean">
+            <li>Skips IB clientId <code>5</code> (CSP) and takes next free pool id</li>
+            <li>State in <code>data/sleeve_e_positions.json</code></li>
+            <li>Does not share Telegram approval IDs with CSP</li>
+          </ul>
         </div>
       </div>
+
+      <div class="block">
+        <div class="meta">Launch</div>
+        <ul class="clean">
+          <li><code>python engine/sleeve_e_supervisor.py --execute --live-account --universe-size 200</code></li>
+        </ul>
+      </div>
     </section>
 
-    <section class="section">
-      <h2>Operating notes</h2>
-      <ul class="clean">
-        <li>Account is SGD-base / USD stocks; cash can print negative while NAV stays healthy (margin). That is not an options P&amp;L issue.</li>
-        <li>CSP and Sleeve E can run on live TWS together via the clientId pool (OptionsDesk keeps 5; Sleeve E takes the next free id).</li>
-        <li>Illiquid after-hours option quotes are skipped at trade-build, not auto-filled.</li>
-        <li>The desk remains collateral-first: no CSP without full cash security inside the sleeve cap.</li>
-      </ul>
+    <!-- VOLHARVEST -->
+    <section id="volharvest" class="panel">
+      <h2 class="section">VOLHARVEST <span class="badge locked">Paper · live locked</span></h2>
+
+      <div class="block">
+        <div class="meta">Purpose</div>
+        <ul class="clean">
+          <li>Same vol-risk premium, <strong>defined-risk only</strong> (iron condors / wings)</li>
+          <li>Risk Officer rejects CSP / naked shorts in this path</li>
+          <li>Papers beside live OptionsDesk + Sleeve E until gate clears</li>
+          <li>Live unlock needs ≥15 session days + ≥40 fills + review</li>
+        </ul>
+      </div>
+
+      <div class="grid-2">
+        <div class="block">
+          <div class="meta">Sleeves</div>
+          <ul class="clean">
+            <li><strong>A</strong> — Earnings vol crush (event IC) — spec sibling to live Sleeve E</li>
+            <li><strong>B</strong> — IV−RV harvest (core, 30–45 DTE IC)</li>
+            <li><strong>C</strong> — Skew overlay (≤15% of risk budget)</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="meta">Agents &amp; risk</div>
+          <ul class="clean">
+            <li><strong>Scout</strong> — defined-risk candidates</li>
+            <li><strong>EventScreen</strong> — veto binaries</li>
+            <li><strong>RiskOfficer</strong> — hard loss bounds</li>
+            <li><strong>paper_sim</strong> — fills without IB orders</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Paper path</h3>
+      <div class="flow">
+        <span class="step">Data</span><span class="arrow">→</span>
+        <span class="step">Scout (A/B/C)</span><span class="arrow">→</span>
+        <span class="step">Event + Risk</span><span class="arrow">→</span>
+        <span class="step">Paper fill</span><span class="arrow">→</span>
+        <span class="step">Paper gate</span>
+      </div>
+
+      <h3>Conviction (advisory)</h3>
+      <div class="block">
+        <ul class="clean">
+          <li>Manual thesis book → chain / size helpers</li>
+          <li>Readonly IB clientId <code>52</code></li>
+          <li>No auto orders · no CSP automation</li>
+        </ul>
+      </div>
     </section>
 
-    <div class="footer">Updated Aug 2026 from live SwingDesk engines (CSP v2, Sleeve E v1, equity dry-run, VOLHARVEST paper). Replaces the Jul post-meeting single-sleeve note.</div>
+    <!-- Stack -->
+    <section id="stack" class="panel">
+      <h2 class="section">Tech Stack</h2>
+
+      <div class="stack">
+        <div class="item">
+          <div class="label">Language</div>
+          <div class="value">Python 3.11+</div>
+        </div>
+        <div class="item">
+          <div class="label">Broker</div>
+          <div class="value">IBKR · ib_insync</div>
+        </div>
+        <div class="item">
+          <div class="label">Data</div>
+          <div class="value">IBKR + yfinance</div>
+        </div>
+        <div class="item">
+          <div class="label">Compute</div>
+          <div class="value">pandas · numpy · scipy</div>
+        </div>
+        <div class="item">
+          <div class="label">Ops UI</div>
+          <div class="value">Rich CLI + Telegram</div>
+        </div>
+        <div class="item">
+          <div class="label">Storage</div>
+          <div class="value">SQLite · CSV · JSONL</div>
+        </div>
+        <div class="item">
+          <div class="label">Config</div>
+          <div class="value">.env + config.py</div>
+        </div>
+        <div class="item">
+          <div class="label">Local dash</div>
+          <div class="value">webdash :7800</div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="meta">Why this stack</div>
+        <ul class="clean">
+          <li>Stay close to the broker API</li>
+          <li>Research in Python / pandas</li>
+          <li>Operate via CLI + Telegram before a full web app</li>
+          <li>Local files for auditability (fills, scan logs, weekly state)</li>
+        </ul>
+      </div>
+
+      <h3>Per-desk wiring</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Equity</th>
+            <th>CSP</th>
+            <th>Sleeve E</th>
+            <th>VOLHARVEST</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Entry</td>
+            <td><code>main.py --live-supervised</code></td>
+            <td><code>--optionsdesk-live</code></td>
+            <td><code>sleeve_e_supervisor.py</code></td>
+            <td><code>--volharvest-supervised</code></td>
+          </tr>
+          <tr>
+            <td>Engine</td>
+            <td><code>supervised.py</code></td>
+            <td><code>optionsdesk_supervised.py</code></td>
+            <td><code>sleeve_e_supervisor.py</code></td>
+            <td><code>volharvest_supervised.py</code></td>
+          </tr>
+          <tr>
+            <td>Client ID</td>
+            <td>2 (dry-run)</td>
+            <td><strong>5</strong></td>
+            <td>pool 10+ (skip 5)</td>
+            <td><strong>51</strong> readonly</td>
+          </tr>
+          <tr>
+            <td>Port</td>
+            <td>7496 data / dry-run</td>
+            <td>7496 live</td>
+            <td>7496 live</td>
+            <td>paper_sim</td>
+          </tr>
+          <tr>
+            <td>Storage</td>
+            <td><code>journal.db</code> + paper book</td>
+            <td><code>optionsdesk_live_trades.csv</code></td>
+            <td><code>sleeve_e_positions.json</code></td>
+            <td><code>volharvest.db</code> + gate JSON</td>
+          </tr>
+          <tr>
+            <td>Orders</td>
+            <td>Dry-run only</td>
+            <td>Live enabled</td>
+            <td>Live enabled</td>
+            <td>Live refused</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>IBKR client map</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Process</th>
+            <th>Port</th>
+            <th>ID</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>OptionsDesk live</td>
+            <td>7496</td>
+            <td>5</td>
+            <td>CSP orders</td>
+          </tr>
+          <tr>
+            <td>Sleeve E live</td>
+            <td>7496</td>
+            <td>10+ from pool</td>
+            <td>Earnings verticals</td>
+          </tr>
+          <tr>
+            <td>Equity supervised</td>
+            <td>7496</td>
+            <td>2</td>
+            <td>Data only · dry-run</td>
+          </tr>
+          <tr>
+            <td>VOLHARVEST data</td>
+            <td>7496 readonly</td>
+            <td>51</td>
+            <td>Chains / surfaces</td>
+          </tr>
+          <tr>
+            <td>Conviction</td>
+            <td>IB_PORT</td>
+            <td>52</td>
+            <td>Readonly sizing</td>
+          </tr>
+          <tr>
+            <td>webdash</td>
+            <td>7496</td>
+            <td>extra sockets</td>
+            <td>Local UI on :7800</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Architecture -->
+    <section id="arch" class="panel">
+      <h2 class="section">Architecture</h2>
+
+      <div class="block">
+        <div class="meta">Design</div>
+        <ul class="clean">
+          <li>Not microservices — one process family sharing IBKR + Telegram</li>
+          <li>Desks are packages with hard risk boundaries and separate clientIds</li>
+          <li>CSP never enters VOLHARVEST — Risk Officer enforces it there</li>
+          <li>Sleeve E is the live earnings path; VOLHARVEST A remains the paper / defined-risk sibling</li>
+          <li>Paper vs live is coded, not just convention</li>
+        </ul>
+      </div>
+
+      <div class="diagram">
+        <svg viewBox="0 0 940 420" width="100%" height="auto" role="img" aria-label="System diagram">
+          <rect x="0" y="0" width="940" height="420" fill="#fafafa" stroke="#dde3df"/>
+          <rect x="20" y="16" width="900" height="48" fill="#ecefeb" stroke="#dde3df"/>
+          <text x="36" y="36" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1a1f1c">Shared</text>
+          <text x="36" y="52" font-family="IBM Plex Mono,monospace" font-size="11" fill="#5c6b64">IBKR 7496  ·  Telegram  ·  .env  ·  clientId pool  ·  main.py</text>
+
+          <rect x="20" y="80" width="220" height="310" fill="#fff" stroke="#2a5c4e" stroke-width="1.5"/>
+          <rect x="20" y="80" width="220" height="32" fill="#e9f1ee" stroke="#2a5c4e"/>
+          <text x="34" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#2a5c4e">Long Equity</text>
+          <text x="34" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">scanner · signals</text>
+          <text x="34" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">sizer · journal</text>
+          <text x="34" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">paper book · trail</text>
+          <rect x="34" y="200" width="192" height="32" fill="#f3ecd8" stroke="#e2d4a8"/>
+          <text x="46" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#7a6418">dry-run · id 2</text>
+          <text x="34" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: swing process</text>
+          <text x="34" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Live bridge: off</text>
+
+          <rect x="250" y="80" width="220" height="310" fill="#fff" stroke="#1e4d82" stroke-width="1.5"/>
+          <rect x="250" y="80" width="220" height="32" fill="#eaf0f7" stroke="#1e4d82"/>
+          <text x="264" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1e4d82">OptionsDesk CSP</text>
+          <text x="264" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">hypothesis V2</text>
+          <text x="264" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">IVR · regime · builder</text>
+          <text x="264" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">ticker dedupe · 50%/2×</text>
+          <rect x="264" y="200" width="192" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
+          <text x="276" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · 7496 / id 5</text>
+          <text x="264" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: put premium</text>
+          <text x="264" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Skip earnings ±5d</text>
+
+          <rect x="480" y="80" width="220" height="310" fill="#fff" stroke="#5a3d7a" stroke-width="1.5"/>
+          <rect x="480" y="80" width="220" height="32" fill="#f0eaf6" stroke="#5a3d7a"/>
+          <text x="494" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#5a3d7a">Sleeve E</text>
+          <text x="494" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">1–3 DTE earnings</text>
+          <text x="494" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">vertical · YES NAKED</text>
+          <text x="494" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">close AM after print</text>
+          <rect x="494" y="200" width="192" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
+          <text x="506" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · pool id 10+</text>
+          <text x="494" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: event vol crush</text>
+          <text x="494" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Does not use id 5</text>
+
+          <rect x="710" y="80" width="210" height="310" fill="#fff" stroke="#7a6418" stroke-width="1.5"/>
+          <rect x="710" y="80" width="210" height="32" fill="#f3ecd8" stroke="#7a6418"/>
+          <text x="724" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#7a6418">VOLHARVEST</text>
+          <text x="724" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">sleeves A / B / C</text>
+          <text x="724" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">Risk Officer · scout</text>
+          <text x="724" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">paper_sim · gate</text>
+          <rect x="724" y="200" width="182" height="32" fill="#f3e5e0" stroke="#e8c8bf"/>
+          <text x="736" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a3d2e">paper · live locked</text>
+          <text x="724" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: defined-risk</text>
+          <text x="724" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">CSP banned here</text>
+        </svg>
+      </div>
+
+      <h3>Repo map</h3>
+      <div class="tree"><span class="eq">modules/</span>       equity toolkit + shared IB / Telegram
+<span class="eq">backtester/</span>    equity replay + regime helpers
+<span class="eq">engine/</span>        supervised loops (equity · CSP · E · vol)
+<span class="op">optionsdesk/</span>  live CSP + hypothesis + Sleeve E signal
+<span class="vh">desk/</span>          VOLHARVEST (data · signals · risk · agents)
+<span class="cv">conviction/</span>   discretionary thesis book
+scripts/       ops runners + webdash
+data/          DBs, caches, fills, scan logs
+reports/       CSV exports</div>
+    </section>
+
+    <footer>Updated Aug 2026 · same format as the intro-call architecture page · published at petrifiedyunni.github.io/optionsdesk-summary-share</footer>
   </div>
+
+  <script>
+    const buttons = document.querySelectorAll("nav.tabs button");
+    const panels = document.querySelectorAll("section.panel");
+
+    function activate(id) {
+      buttons.forEach((b) => b.classList.toggle("active", b.dataset.tab === id));
+      panels.forEach((p) => p.classList.toggle("active", p.id === id));
+      history.replaceState(null, "", "#" + id);
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => activate(btn.dataset.tab));
+    });
+
+    const hash = location.hash.replace("#", "");
+    if (hash && document.getElementById(hash)) activate(hash);
+  </script>
 </body>
 </html>
