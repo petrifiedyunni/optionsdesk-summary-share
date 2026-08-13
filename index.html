@@ -254,6 +254,16 @@
       margin: 0 0 10px;
     }
 
+    .example {
+      border-left: 3px solid var(--options);
+      background: #f7f9f8;
+      padding: 12px 14px;
+      margin: 0 0 14px;
+      font-size: 0.92rem;
+    }
+    .example .meta { margin-bottom: 6px; }
+    .example code { background: #ecefeb; }
+
     code, .mono {
       font-family: var(--mono);
       font-size: 0.84em;
@@ -590,13 +600,58 @@
             <td>Sell 33% at 1R, 33% at 2R, trail the rest</td>
             <td>Locks some gain early; leftover rides with a trailing stop.</td>
           </tr>
+        </tbody>
+      </table>
+
+      <h3>Sizing</h3>
+      <p class="note">Shares come from how much we are willing to lose at the stop — not from “I like this name.” Same sizer is used in backtest and the dry-run engine.</p>
+      <table>
+        <thead>
           <tr>
-            <td>Sizing</td>
-            <td>Risk 3% of capital (hard cap 5%) ÷ stop distance</td>
-            <td>Position size comes from downside first, not from conviction alone.</td>
+            <th>Step</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Risk budget</td>
+            <td>⅛ Kelly on trailing win-rate / avg win / avg loss · shrink toward 41% WR / 2.2R / 1.0R when history is thin</td>
+            <td>Full Kelly is too aggressive. Eighth-Kelly is the safety factor; priors stop tiny samples from exploding size.</td>
+          </tr>
+          <tr>
+            <td>2. Hard ceiling</td>
+            <td>Risk ≤ 2.5% of NAV × conviction tier (tier 1.0 → 2.5%, never above ~5%)</td>
+            <td>Even a fat Kelly number cannot put a huge chunk of the account on one stop.</td>
+          </tr>
+          <tr>
+            <td>3. Convert to shares</td>
+            <td><code>shares = floor( NAV × risk_frac / |entry − stop| )</code></td>
+            <td>A tighter stop → more shares; a wider stop → fewer. Two “Strong Buy” names do not get the same size.</td>
+          </tr>
+          <tr>
+            <td>4. Correlation cap</td>
+            <td>Sector gross ≤ 25% NAV · factor (e.g. high-beta / semis) ≤ 35% NAV · shrink, don’t just reject</td>
+            <td>Stops “5 trades” that are really one tech bet.</td>
+          </tr>
+          <tr>
+            <td>5. Portfolio vol</td>
+            <td>Scale gross to ~15% annualized vol · scalar clamped 0.25–1.0</td>
+            <td>When the whole book is already hot, every new ticket gets smaller automatically.</td>
+          </tr>
+          <tr>
+            <td>6. Sentiment haircut</td>
+            <td>Multiply shares by news/sentiment multiplier (0–1)</td>
+            <td>Ugly headline → size down or skip, without changing the signal itself.</td>
           </tr>
         </tbody>
       </table>
+      <div class="example">
+        <div class="meta">Worked example</div>
+        NAV $8,000 · entry $100 · stop $94 (stop distance $6) · risk_frac 2.5%<br />
+        Risk dollars = 8,000 × 0.025 = <strong>$200</strong><br />
+        Shares = floor(200 / 6) = <strong>33 shares</strong> (~$3,300 notional). If that $200 stop-loss would push semis above 25% NAV, shares shrink until it fits.
+      </div>
 
       <div class="block">
         <div class="meta">Launch</div>
@@ -713,7 +768,7 @@
         </tbody>
       </table>
 
-      <h3>Exits and sizing</h3>
+      <h3>Exits</h3>
       <p class="note">Auto-close only fires on these marks. It will <em>not</em> unwind a “shouldn’t have opened” trade.</p>
       <table>
         <thead>
@@ -739,18 +794,49 @@
             <td>Use live <strong>ask</strong> (what we’d pay to close)</td>
             <td>Last/mid at the open caused phantom profit triggers.</td>
           </tr>
+        </tbody>
+      </table>
+
+      <h3>Sizing</h3>
+      <p class="note">Contracts come from collateral budget, then cash + sleeve must actually fit. Same builder in scan and live.</p>
+      <table>
+        <thead>
           <tr>
-            <td>Per trade</td>
-            <td>≤ 5% of NAV collateral</td>
-            <td>One name cannot dominate the book.</td>
+            <th>Step</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Collateral budget</td>
+            <td><code>budget = NAV × 5% × regime scalar</code> (scalar 0–1 from SPY ADX + VIX)</td>
+            <td>Bull = full size. Range = haircut. Bear / structural halt = 0 (stand down).</td>
           </tr>
           <tr>
-            <td>Book</td>
-            <td>Max 5 open · max 15 new / week · sleeve ≤ 80% NAV</td>
-            <td>v2 raised the weekly cap (was 2) and sleeve % (was 40%) so the 3/day session isn’t fake-blocked.</td>
+            <td>2. Convert to lots</td>
+            <td><code>contracts = floor(budget / (strike × 100))</code> · floor at 1 lot</td>
+            <td>Higher strike → fewer lots. Small NAV almost always prints 1 lot, not a fractional put.</td>
+          </tr>
+          <tr>
+            <td>3. Cash + sleeve check</td>
+            <td>Need <code>strike × 100 × contracts</code> in cash <em>and</em> under the 80% NAV sleeve cap. If not, retry 1 lot; still no → skip</td>
+            <td>Never sell a put we cannot fully cash-secure, and never let options eat the whole account.</td>
+          </tr>
+          <tr>
+            <td>4. Book caps</td>
+            <td>Max 5 open · max 15 new / week · one ticker at a time</td>
+            <td>v2 raised weekly (was 2) and sleeve % (was 40%) so the 3/day session isn’t fake-blocked. Ticker dedupe stops the CPNG double.</td>
           </tr>
         </tbody>
       </table>
+      <div class="example">
+        <div class="meta">Worked example</div>
+        NAV $8,000 · $20 strike CSP · bull scalar 1.0<br />
+        Budget = 8,000 × 0.05 × 1.0 = <strong>$400</strong><br />
+        Collateral / lot = 20 × 100 = $2,000 → floor(400 / 2,000) = 0 → <strong>1 lot</strong> ($2,000 collateral) if cash + sleeve (80% = $6,400) still have room; otherwise skip.<br />
+        Same put at $80k NAV → floor(4,000 / 2,000) = <strong>2 lots</strong>. Range scalar 0.5 would cut that to 1.
+      </div>
 
       <h3>Live path</h3>
       <div class="flow">
@@ -884,7 +970,7 @@
         </tbody>
       </table>
 
-      <h3>Exits and sizing</h3>
+      <h3>Exits</h3>
       <table>
         <thead>
           <tr>
@@ -904,18 +990,49 @@
             <td>Close at 30% of credit (looser) or market — don’t hold a second session</td>
             <td>The crush usually happens overnight. Sitting another day just reloads gap risk.</td>
           </tr>
+        </tbody>
+      </table>
+
+      <h3>Sizing</h3>
+      <p class="note">Spreads size off <em>max loss</em>. Naked sizes off <em>collateral</em>, same as a CSP. Both clamp 1–5 lots.</p>
+      <table>
+        <thead>
           <tr>
-            <td>Spread size</td>
-            <td>Risk 2% of NAV on max loss · max 5 contracts</td>
-            <td>One earnings name cannot blow the book.</td>
+            <th>Step</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Spread max loss</td>
+            <td><code>max_loss / lot = (wing width − net credit) × 100</code></td>
+            <td>Defined-risk: the worst case is known before we hit send.</td>
           </tr>
           <tr>
-            <td>If naked</td>
-            <td>Collateral ≤ 5% of NAV</td>
-            <td>Same per-name cap as a CSP.</td>
+            <td>2. Spread budget</td>
+            <td><code>risk $ = NAV × 2%</code> · <code>contracts = floor(risk $ / max_loss)</code></td>
+            <td>One earnings name can take at most ~2% of the account if the print goes the wrong way.</td>
+          </tr>
+          <tr>
+            <td>3. Naked (opt-in)</td>
+            <td><code>max collateral = min(NAV × 5%, sleeve remaining)</code> · <code>contracts = floor(that / (K × 100))</code></td>
+            <td>Same per-name collateral cap as CSP. Only after implied move &lt; 15% and a <code>YES NAKED</code>.</td>
+          </tr>
+          <tr>
+            <td>4. Hard clamp</td>
+            <td>Always 1–5 contracts, regardless of NAV</td>
+            <td>Small accounts floor at 1 lot (may risk a bit over 2%). Fat NAV still cannot dump 20 lots into one print.</td>
           </tr>
         </tbody>
       </table>
+      <div class="example">
+        <div class="meta">Worked example</div>
+        NAV $8,000 · $30 / $27.50 put credit $0.40 (width $2.50)<br />
+        Max loss / lot = (2.50 − 0.40) × 100 = <strong>$210</strong><br />
+        Risk budget = 8,000 × 0.02 = $160 → floor(160 / 210) = 0 → <strong>1 lot</strong> (total max loss $210 ≈ 2.6% NAV).<br />
+        Same spread at $50k NAV → floor(1,000 / 210) = <strong>4 lots</strong> ($840 max loss). Naked $30 put at $50k → min($2,500, sleeve left) / $3,000 → 1 lot if the sleeve still has room.
+      </div>
 
       <h3>Live path</h3>
       <div class="flow">
