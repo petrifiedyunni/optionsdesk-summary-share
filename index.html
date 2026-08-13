@@ -65,7 +65,7 @@
 
     .status-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 12px;
     }
     @media (max-width: 700px) { .status-row { grid-template-columns: 1fr; } }
@@ -330,15 +330,6 @@
             <li>Auto-close morning after earnings</li>
           </ul>
         </div>
-        <div class="status vh">
-          <span class="badge locked">Paper · live locked</span>
-          <h2>VOLHARVEST</h2>
-          <ul>
-            <li>Defined-risk iron condors (sleeves A / B / C)</li>
-            <li>Risk Officer bans naked / CSP in this path</li>
-            <li>Papers beside live desks until gate clears</li>
-          </ul>
-        </div>
       </div>
     </header>
 
@@ -347,7 +338,6 @@
       <button type="button" data-tab="equity">Equity</button>
       <button type="button" data-tab="csp">CSP</button>
       <button type="button" data-tab="sleeve-e">Sleeve E</button>
-      <button type="button" data-tab="volharvest">VOLHARVEST</button>
       <button type="button" data-tab="stack">Tech Stack</button>
       <button type="button" data-tab="arch">Architecture</button>
     </nav>
@@ -361,7 +351,7 @@
           <li>Single Python monorepo under <code>swingdesk/</code></li>
           <li>Shared IBKR + Telegram + CLI across desks</li>
           <li>Each sleeve is its <strong>own process</strong> and IB clientId — they do not start each other</li>
-          <li>Equity = built, parked on paper · CSP + Sleeve E = live capital · VOLHARVEST = paper</li>
+          <li>Equity = built, parked on paper · CSP + Sleeve E = live capital</li>
         </ul>
       </div>
 
@@ -369,7 +359,6 @@
 ├── <span class="eq">modules/</span> + <span class="eq">backtester/</span>     <span class="dim">→ Long Equity (dry-run)</span>
 ├── <span class="op">optionsdesk/</span>               <span class="dim">→ OptionsDesk CSP (live v2)</span>
 ├── <span class="se">engine/sleeve_e_supervisor</span>  <span class="dim">→ Earnings IV crush (live)</span>
-├── <span class="vh">desk/</span>                      <span class="dim">→ VOLHARVEST (paper · live locked)</span>
 └── <span class="cv">conviction/</span>                <span class="dim">→ Discretionary book (no auto orders)</span></div>
 
       <table>
@@ -417,18 +406,6 @@
             </td>
             <td>Own the event window CSP is banned from</td>
             <td><span class="badge live">Live</span></td>
-          </tr>
-          <tr>
-            <td><strong>VOLHARVEST</strong><br /><code>desk/</code></td>
-            <td>
-              <ul class="clean">
-                <li>Defined-risk iron condors</li>
-                <li>Sleeves A / B / C</li>
-                <li>Risk Officer bans naked/CSP</li>
-              </ul>
-            </td>
-            <td>Same vol edge without unbounded put risk</td>
-            <td><span class="badge locked">Paper · locked</span></td>
           </tr>
           <tr>
             <td><strong>Conviction</strong><br /><code>conviction/</code></td>
@@ -700,59 +677,6 @@
       </div>
     </section>
 
-    <!-- VOLHARVEST -->
-    <section id="volharvest" class="panel">
-      <h2 class="section">VOLHARVEST <span class="badge locked">Paper · live locked</span></h2>
-
-      <div class="block">
-        <div class="meta">Purpose</div>
-        <ul class="clean">
-          <li>Same vol-risk premium, <strong>defined-risk only</strong> (iron condors / wings)</li>
-          <li>Risk Officer rejects CSP / naked shorts in this path</li>
-          <li>Papers beside live OptionsDesk + Sleeve E until gate clears</li>
-          <li>Live unlock needs ≥15 session days + ≥40 fills + review</li>
-        </ul>
-      </div>
-
-      <div class="grid-2">
-        <div class="block">
-          <div class="meta">Sleeves</div>
-          <ul class="clean">
-            <li><strong>A</strong> — Earnings vol crush (event IC) — spec sibling to live Sleeve E</li>
-            <li><strong>B</strong> — IV−RV harvest (core, 30–45 DTE IC)</li>
-            <li><strong>C</strong> — Skew overlay (≤15% of risk budget)</li>
-          </ul>
-        </div>
-        <div class="block">
-          <div class="meta">Agents &amp; risk</div>
-          <ul class="clean">
-            <li><strong>Scout</strong> — defined-risk candidates</li>
-            <li><strong>EventScreen</strong> — veto binaries</li>
-            <li><strong>RiskOfficer</strong> — hard loss bounds</li>
-            <li><strong>paper_sim</strong> — fills without IB orders</li>
-          </ul>
-        </div>
-      </div>
-
-      <h3>Paper path</h3>
-      <div class="flow">
-        <span class="step">Data</span><span class="arrow">→</span>
-        <span class="step">Scout (A/B/C)</span><span class="arrow">→</span>
-        <span class="step">Event + Risk</span><span class="arrow">→</span>
-        <span class="step">Paper fill</span><span class="arrow">→</span>
-        <span class="step">Paper gate</span>
-      </div>
-
-      <h3>Conviction (advisory)</h3>
-      <div class="block">
-        <ul class="clean">
-          <li>Manual thesis book → chain / size helpers</li>
-          <li>Readonly IB clientId <code>52</code></li>
-          <li>No auto orders · no CSP automation</li>
-        </ul>
-      </div>
-    </section>
-
     <!-- Stack -->
     <section id="stack" class="panel">
       <h2 class="section">Tech Stack</h2>
@@ -810,7 +734,6 @@
             <th>Equity</th>
             <th>CSP</th>
             <th>Sleeve E</th>
-            <th>VOLHARVEST</th>
           </tr>
         </thead>
         <tbody>
@@ -819,42 +742,36 @@
             <td><code>main.py --live-supervised</code></td>
             <td><code>--optionsdesk-live</code></td>
             <td><code>sleeve_e_supervisor.py</code></td>
-            <td><code>--volharvest-supervised</code></td>
           </tr>
           <tr>
             <td>Engine</td>
             <td><code>supervised.py</code></td>
             <td><code>optionsdesk_supervised.py</code></td>
             <td><code>sleeve_e_supervisor.py</code></td>
-            <td><code>volharvest_supervised.py</code></td>
           </tr>
           <tr>
             <td>Client ID</td>
             <td>2 (dry-run)</td>
             <td><strong>5</strong></td>
             <td>pool 10+ (skip 5)</td>
-            <td><strong>51</strong> readonly</td>
           </tr>
           <tr>
             <td>Port</td>
             <td>7496 data / dry-run</td>
             <td>7496 live</td>
             <td>7496 live</td>
-            <td>paper_sim</td>
           </tr>
           <tr>
             <td>Storage</td>
             <td><code>journal.db</code> + paper book</td>
             <td><code>optionsdesk_live_trades.csv</code></td>
             <td><code>sleeve_e_positions.json</code></td>
-            <td><code>volharvest.db</code> + gate JSON</td>
           </tr>
           <tr>
             <td>Orders</td>
             <td>Dry-run only</td>
             <td>Live enabled</td>
             <td>Live enabled</td>
-            <td>Live refused</td>
           </tr>
         </tbody>
       </table>
@@ -889,12 +806,6 @@
             <td>Data only · dry-run</td>
           </tr>
           <tr>
-            <td>VOLHARVEST data</td>
-            <td>7496 readonly</td>
-            <td>51</td>
-            <td>Chains / surfaces</td>
-          </tr>
-          <tr>
             <td>Conviction</td>
             <td>IB_PORT</td>
             <td>52</td>
@@ -919,71 +830,55 @@
         <ul class="clean">
           <li>Not microservices — one process family sharing IBKR + Telegram</li>
           <li>Desks are packages with hard risk boundaries and separate clientIds</li>
-          <li>CSP never enters VOLHARVEST — Risk Officer enforces it there</li>
-          <li>Sleeve E is the live earnings path; VOLHARVEST A remains the paper / defined-risk sibling</li>
+          <li>Sleeve E is the live earnings path; CSP skips that window (±5d)</li>
           <li>Paper vs live is coded, not just convention</li>
         </ul>
       </div>
 
       <div class="diagram">
-        <svg viewBox="0 0 940 420" width="100%" height="auto" role="img" aria-label="System diagram">
-          <rect x="0" y="0" width="940" height="420" fill="#fafafa" stroke="#dde3df"/>
+        <svg viewBox="0 0 940 380" width="100%" height="auto" role="img" aria-label="System diagram">
+          <rect x="0" y="0" width="940" height="380" fill="#fafafa" stroke="#dde3df"/>
           <rect x="20" y="16" width="900" height="48" fill="#ecefeb" stroke="#dde3df"/>
           <text x="36" y="36" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1a1f1c">Shared</text>
           <text x="36" y="52" font-family="IBM Plex Mono,monospace" font-size="11" fill="#5c6b64">IBKR 7496  ·  Telegram  ·  .env  ·  clientId pool  ·  main.py</text>
 
-          <rect x="20" y="80" width="220" height="310" fill="#fff" stroke="#2a5c4e" stroke-width="1.5"/>
-          <rect x="20" y="80" width="220" height="32" fill="#e9f1ee" stroke="#2a5c4e"/>
+          <rect x="20" y="80" width="290" height="280" fill="#fff" stroke="#2a5c4e" stroke-width="1.5"/>
+          <rect x="20" y="80" width="290" height="32" fill="#e9f1ee" stroke="#2a5c4e"/>
           <text x="34" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#2a5c4e">Long Equity</text>
-          <text x="34" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">scanner · signals</text>
-          <text x="34" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">sizer · journal</text>
-          <text x="34" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">paper book · trail</text>
-          <rect x="34" y="200" width="192" height="32" fill="#f3ecd8" stroke="#e2d4a8"/>
-          <text x="46" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#7a6418">dry-run · id 2</text>
-          <text x="34" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: swing process</text>
-          <text x="34" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Live bridge: off</text>
+          <text x="34" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">scanner · signals · sizer</text>
+          <text x="34" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">journal · paper book · trail</text>
+          <rect x="34" y="186" width="262" height="32" fill="#f3ecd8" stroke="#e2d4a8"/>
+          <text x="46" y="206" font-family="IBM Plex Mono,monospace" font-size="11" fill="#7a6418">dry-run · id 2</text>
+          <text x="34" y="248" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: swing process</text>
+          <text x="34" y="266" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Live bridge: off</text>
 
-          <rect x="250" y="80" width="220" height="310" fill="#fff" stroke="#1e4d82" stroke-width="1.5"/>
-          <rect x="250" y="80" width="220" height="32" fill="#eaf0f7" stroke="#1e4d82"/>
-          <text x="264" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1e4d82">OptionsDesk CSP</text>
-          <text x="264" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">hypothesis V2</text>
-          <text x="264" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">IVR · regime · builder</text>
-          <text x="264" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">ticker dedupe · 50%/2×</text>
-          <rect x="264" y="200" width="192" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
-          <text x="276" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · 7496 / id 5</text>
-          <text x="264" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: put premium</text>
-          <text x="264" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Skip earnings ±5d</text>
+          <rect x="325" y="80" width="290" height="280" fill="#fff" stroke="#1e4d82" stroke-width="1.5"/>
+          <rect x="325" y="80" width="290" height="32" fill="#eaf0f7" stroke="#1e4d82"/>
+          <text x="339" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1e4d82">OptionsDesk CSP</text>
+          <text x="339" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">hypothesis V2 · IVR · regime</text>
+          <text x="339" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">ticker dedupe · 50% / 2×</text>
+          <rect x="339" y="186" width="262" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
+          <text x="351" y="206" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · 7496 / id 5</text>
+          <text x="339" y="248" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: put premium</text>
+          <text x="339" y="266" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Skip earnings ±5d</text>
 
-          <rect x="480" y="80" width="220" height="310" fill="#fff" stroke="#5a3d7a" stroke-width="1.5"/>
-          <rect x="480" y="80" width="220" height="32" fill="#f0eaf6" stroke="#5a3d7a"/>
-          <text x="494" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#5a3d7a">Sleeve E</text>
-          <text x="494" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">1–3 DTE earnings</text>
-          <text x="494" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">vertical · YES NAKED</text>
-          <text x="494" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">close AM after print</text>
-          <rect x="494" y="200" width="192" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
-          <text x="506" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · pool id 10+</text>
-          <text x="494" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: event vol crush</text>
-          <text x="494" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Does not use id 5</text>
-
-          <rect x="710" y="80" width="210" height="310" fill="#fff" stroke="#7a6418" stroke-width="1.5"/>
-          <rect x="710" y="80" width="210" height="32" fill="#f3ecd8" stroke="#7a6418"/>
-          <text x="724" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#7a6418">VOLHARVEST</text>
-          <text x="724" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">sleeves A / B / C</text>
-          <text x="724" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">Risk Officer · scout</text>
-          <text x="724" y="176" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">paper_sim · gate</text>
-          <rect x="724" y="200" width="182" height="32" fill="#f3e5e0" stroke="#e8c8bf"/>
-          <text x="736" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a3d2e">paper · live locked</text>
-          <text x="724" y="262" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: defined-risk</text>
-          <text x="724" y="280" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">CSP banned here</text>
+          <rect x="630" y="80" width="290" height="280" fill="#fff" stroke="#5a3d7a" stroke-width="1.5"/>
+          <rect x="630" y="80" width="290" height="32" fill="#f0eaf6" stroke="#5a3d7a"/>
+          <text x="644" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#5a3d7a">Sleeve E</text>
+          <text x="644" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">1–3 DTE earnings · vertical</text>
+          <text x="644" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">YES NAKED · close AM after</text>
+          <rect x="644" y="186" width="262" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
+          <text x="656" y="206" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · pool id 10+</text>
+          <text x="644" y="248" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: event vol crush</text>
+          <text x="644" y="266" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Does not use id 5</text>
         </svg>
       </div>
 
       <h3>Repo map</h3>
       <div class="tree"><span class="eq">modules/</span>       equity toolkit + shared IB / Telegram
 <span class="eq">backtester/</span>    equity replay + regime helpers
-<span class="eq">engine/</span>        supervised loops (equity · CSP · E · vol)
+<span class="eq">engine/</span>        supervised loops (equity · CSP · Sleeve E)
 <span class="op">optionsdesk/</span>  live CSP + hypothesis + Sleeve E signal
-<span class="vh">desk/</span>          VOLHARVEST (data · signals · risk · agents)
 <span class="cv">conviction/</span>   discretionary thesis book
 scripts/       ops runners + webdash
 data/          DBs, caches, fills, scan logs
