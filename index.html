@@ -65,10 +65,11 @@
 
     .status-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px;
     }
-    @media (max-width: 700px) { .status-row { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .status-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 500px) { .status-row { grid-template-columns: 1fr; } }
 
     .status {
       background: var(--surface);
@@ -333,7 +334,7 @@
   <div class="shell">
     <header>
       <div class="kicker">SwingDesk · architecture · Aug 2026 update</div>
-      <h1>Equity vs Options vs Earnings</h1>
+      <h1>Equity vs Options vs Earnings vs 0DTE</h1>
       <div class="status-row">
         <div class="status equity">
           <span class="badge paper">Not active · dry-run</span>
@@ -349,7 +350,7 @@
           <h2>OptionsDesk</h2>
           <ul>
             <li><strong>Live</strong> on IBKR <code>7496</code> / clientId <code>5</code></li>
-            <li>Cash-secured puts · ticker-level dedupe · 50% / 2×</li>
+            <li>Cash-secured puts · IVR + VRP gated · ticker-level dedupe</li>
             <li>Sleeve cap 80% NAV · max 15 new trades / week</li>
           </ul>
         </div>
@@ -362,6 +363,15 @@
             <li>Auto-close morning after earnings</li>
           </ul>
         </div>
+        <div class="status vh">
+          <span class="badge paper">Paper · Sleeve D</span>
+          <h2>0DTE Iron Condor</h2>
+          <ul>
+            <li>VOLHARVEST sleeve · new this update</li>
+            <li>Sandbox-validated 09:45–13:30 ET entry window</li>
+            <li>Standalone stop-loss + mandatory EOD-flatten monitor</li>
+          </ul>
+        </div>
       </div>
     </header>
 
@@ -370,6 +380,7 @@
       <button type="button" data-tab="equity">Equity</button>
       <button type="button" data-tab="csp">CSP</button>
       <button type="button" data-tab="sleeve-e">Sleeve E</button>
+      <button type="button" data-tab="iron-condor">Iron Condor</button>
       <button type="button" data-tab="stack">Tech Stack</button>
       <button type="button" data-tab="arch">Architecture</button>
     </nav>
@@ -383,14 +394,15 @@
           <li>Single Python monorepo under <code>swingdesk/</code></li>
           <li>Shared IBKR + Telegram + CLI across desks</li>
           <li>Each sleeve is its <strong>own process</strong> and IB clientId — they do not start each other</li>
-          <li>Equity = built, parked on paper · CSP + Sleeve E = live capital</li>
+          <li>Equity = built, parked on paper · CSP + Sleeve E = live capital · Iron Condor = paper, new</li>
         </ul>
       </div>
 
       <div class="tree"><span class="dim">swingdesk/</span>
 ├── <span class="eq">modules/</span> + <span class="eq">backtester/</span>     <span class="dim">→ Long Equity (dry-run)</span>
-├── <span class="op">optionsdesk/</span>               <span class="dim">→ OptionsDesk CSP (live v2)</span>
+├── <span class="op">optionsdesk/</span>               <span class="dim">→ OptionsDesk CSP (live v2, VRP-gated)</span>
 ├── <span class="se">engine/sleeve_e_supervisor</span>  <span class="dim">→ Earnings IV crush (live)</span>
+├── <span class="vh">desk/</span>                     <span class="dim">→ VOLHARVEST — Sleeve D 0DTE iron condor (paper)</span>
 └── <span class="cv">conviction/</span>                <span class="dim">→ Discretionary book (no auto orders)</span></div>
 
       <table>
@@ -438,6 +450,18 @@
             </td>
             <td>Own the event window CSP is banned from</td>
             <td><span class="badge live">Live</span></td>
+          </tr>
+          <tr>
+            <td><strong>Sleeve D — Iron Condor</strong><br /><code>desk/</code> (VOLHARVEST)</td>
+            <td>
+              <ul class="clean">
+                <li>0DTE SPY iron condor</li>
+                <li>Sandbox-backtest-validated entry window</li>
+                <li>Standalone stop-loss + EOD-flatten guard</li>
+              </ul>
+            </td>
+            <td>Harvest same-day theta with defined risk, own process</td>
+            <td><span class="badge paper">Paper · new</span></td>
           </tr>
           <tr>
             <td><strong>Conviction</strong><br /><code>conviction/</code></td>
@@ -664,16 +688,27 @@
 
     <!-- CSP -->
     <section id="csp" class="panel">
-      <h2 class="section">OptionsDesk CSP <span class="badge live">Live · v2</span></h2>
+      <h2 class="section">OptionsDesk CSP <span class="badge live">Live · v2</span> <span class="badge built">VRP gate — this update</span></h2>
 
       <div class="block">
         <div class="meta">Purpose</div>
         <ul class="clean">
-          <li>Sell cash-secured puts when IV rank is elevated</li>
+          <li>Sell cash-secured puts when IV rank is elevated <em>and</em> IV is rich relative to realized vol</li>
           <li>SPY regime gate blocks hostile tape</li>
           <li>Frozen hypothesis — retune = new version</li>
           <li>Telegram auto-approve optional; STOP / PAUSE / PANIC always on</li>
         </ul>
+      </div>
+
+      <div class="example">
+        <div class="meta">What changed this update</div>
+        Entry gate went from IVR-only to IVR + a cross-sectional vol-risk-premium (IV − realized vol)
+        percentile + a vol-expansion cap — backtested to meaningfully improve risk-adjusted
+        return over the IVR-only version, at the cost of trading less often. Screened universe went
+        100 → 300 names so the stricter gate still finds a reasonable number of candidates per day.
+        Also: a real per-contract commission was found completely unmodeled in the backtest engine
+        (now fixed) and a client-id collision bug that was silently degrading live scan data (regime,
+        option chain, capital checks) whenever another desk process was already connected (now fixed).
       </div>
 
       <h3>Name-level filters</h3>
@@ -689,13 +724,18 @@
         <tbody>
           <tr>
             <td>Universe</td>
-            <td>Top 100 US names by average volume</td>
-            <td>Only names that can actually fill a short put without owning the book.</td>
+            <td>Top 300 US names by average volume</td>
+            <td>Only names that can actually fill a short put without owning the book. Widened this update so a stricter gate still surfaces enough candidates daily.</td>
           </tr>
           <tr>
             <td>Volatility</td>
-            <td><span class="pill info">IV Rank ≥ 70</span></td>
-            <td>IV Rank = where today’s implied vol sits vs the last year. High = premium is relatively expensive, so selling it pays more.</td>
+            <td><span class="pill info">IV Rank ≥ 80</span></td>
+            <td>IV Rank = where today’s implied vol sits vs the last year. Raised from 70 this update — the tighter floor is what the VRP backtest showed actually carries edge.</td>
+          </tr>
+          <tr>
+            <td>Vol risk premium <span class="badge built">new</span></td>
+            <td><span class="pill info">Cross-sectional VRP percentile ≥ 95</span> <span class="pill info">Vol expansion &lt; 1.2</span></td>
+            <td>Passing the IVR floor isn’t enough on its own — some IVR pops aren’t backed by real relative richness. VRP ranks today’s candidates against each other on (IV − realized vol); vol-expansion filters out names where realized vol is actively accelerating (RV10/RV60), since that’s a regime where short vol gets hurt.</td>
           </tr>
           <tr>
             <td>Earnings</td>
@@ -1073,6 +1113,213 @@
       </div>
     </section>
 
+    <!-- Iron Condor -->
+    <section id="iron-condor" class="panel">
+      <h2 class="section">Sleeve D · 0DTE SPY Iron Condor <span class="badge paper">Paper · new this update</span></h2>
+
+      <div class="block">
+        <div class="meta">Purpose</div>
+        <ul class="clean">
+          <li>Sell same-day-expiry SPY premium with a defined-risk structure — never a naked short</li>
+          <li>Lives in VOLHARVEST (<code>desk/</code>), not <code>optionsdesk/</code> — needs atomic 4-leg execution (single BAG order) that the CSP executor doesn't have</li>
+          <li>Entry window and exit rule are both backtest-validated, not assumed</li>
+          <li>Exit safety runs as its <strong>own standalone process</strong>, separate from entry — same design principle as the ExpirationGuard assignment-prevention service</li>
+        </ul>
+      </div>
+
+      <div class="example">
+        <div class="meta">Why 0DTE and why now</div>
+        Ran a sandbox backtest first (2 years of 15-min SPY bars, Black-Scholes priced off a
+        daily realized-vol proxy) before writing any live code. Two things it found: entry time of
+        day matters a lot once wing width is properly scaled to the day's remaining expected move
+        (not a fixed dollar width — that overstated the effect on a first pass), and a stop-loss
+        helps a lot for morning entries but a profit-target actually <em>hurts</em> in the same
+        window — it cuts winners short faster than it reduces risk.
+      </div>
+
+      <h3>When it trades</h3>
+      <p class="note">SPY only, one attempt per day. Fail either of these → the Risk Officer hard-rejects, no override.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Entry window</td>
+            <td><span class="pill info">09:45–13:30 ET only</span></td>
+            <td>The only window actually backtested. 14:30+ entries were tested and were meaningfully worse; nothing before 09:45 was tested at all — the Risk Officer rejects outside this window rather than silently allowing an unvalidated time.</td>
+          </tr>
+          <tr>
+            <td>Cadence</td>
+            <td><span class="pill block">Max 1 entry / day</span></td>
+            <td>Same-day risk budget discipline — one shot, not a scan loop re-entering all window long.</td>
+          </tr>
+          <tr>
+            <td>Strikes</td>
+            <td>Short legs at ~16-delta both sides, symmetric</td>
+            <td>A conventional, well-understood OTM target for a same-day structure.</td>
+          </tr>
+          <tr>
+            <td>Wing width</td>
+            <td>Scaled to the day's remaining expected move (spot × σ × √T), not fixed</td>
+            <td>A fixed-dollar wing tested first and made shorter entries look better than they really were, purely mechanically — this scaling removed that artifact.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Exits — owned by a separate standalone process</h3>
+      <p class="note"><code>zero_dte_guard.py</code> re-derives truth from the broker every cycle — it does not trust the entry process's in-memory state, so a crash/hang in entry doesn't strand a position unmonitored.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Stop-loss</td>
+            <td><span class="pill block">Buy back at 2× credit</span></td>
+            <td>Backtested best rule for the validated entry window — kept ~all the mean return of holding to close while cutting the worst trade meaningfully.</td>
+          </tr>
+          <tr>
+            <td>Profit target</td>
+            <td><span class="pill warn">None — deliberate</span></td>
+            <td>Tested and it actively hurt risk-adjusted return here. Not an oversight — removing this note without re-running the backtest would be a regression.</td>
+          </tr>
+          <tr>
+            <td>EOD flatten</td>
+            <td><span class="pill block">Force-close by 15:50 ET, unconditional</span></td>
+            <td>0DTE options are American-style and physically settled — never let one ride into the close regardless of P&amp;L.</td>
+          </tr>
+          <tr>
+            <td>Mark</td>
+            <td>Live bid/ask on all 4 legs — pay ask to buy back shorts, receive bid to sell back longs</td>
+            <td>No live quote on any leg → skip the cycle rather than guess.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Sizing &amp; Risk Officer</h3>
+      <p class="note">Same Risk Officer that hard-bans naked/unbounded-loss structures for every VOLHARVEST sleeve — this one just also gets two extra 0DTE-specific checks.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Rule</th>
+            <th>Why</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Risk tier</td>
+            <td>1% of NAV — the most conservative tier of any sleeve</td>
+            <td>New, never-live-tested structure with real tail risk even net of the stop-loss.</td>
+          </tr>
+          <tr>
+            <td>2. Contracts</td>
+            <td><code>contracts = floor(risk budget / max loss per contract)</code>, floored at 0</td>
+            <td>Standard defined-risk sizing — if the budget can't cover one contract's max loss, it sizes to zero rather than rounding up.</td>
+          </tr>
+          <tr>
+            <td>3. Structural checks</td>
+            <td>Must be defined-risk (finite max loss, ≥1 long + ≥1 short leg) — same as every sleeve</td>
+            <td><code>StructureType.IRON_CONDOR</code> already existed in the Risk Officer's allowed set; nothing new needed there.</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="example">
+        <div class="meta">Real run, live data (this update)</div>
+        SPY spot $769.35 · daily-vol proxy 12.5% · condor priced ~$4 wings, credit $0.62/share,
+        max loss $338/contract · real account NAV $8,430 (via IB NetLiq) → 1% risk budget = $84.
+        <strong>Risk Officer correctly rejects</strong> — budget can't cover one contract yet. Same
+        account-size story as the CSP sleeve; not a bug, a real current constraint.
+      </div>
+
+      <h3>Safety design</h3>
+      <div class="grid-2">
+        <div class="block">
+          <div class="meta">Execution</div>
+          <ul class="clean">
+            <li>Single atomic BAG order for all 4 legs — never legs in, so no partial-fill leaves naked exposure</li>
+            <li>Laddered limit price, 3 steps, cancels rather than chasing indefinitely</li>
+            <li>Paper only right now — VOLHARVEST's own live-trading gate stays locked for this sleeve</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="meta">A bug this caught before it shipped</div>
+          <ul class="clean">
+            <li>The existing assignment-prevention guard force-closes any short leg within 1 DTE — but a 0DTE leg's DTE is <em>always</em> 0, so unmodified it would've force-closed this sleeve's position on its first check after entry</li>
+            <li>Fixed by excluding this sleeve's open legs from that guard's view — this sleeve's own guard fully owns the same-day-close guarantee instead</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Backtest snapshot (sandbox — 2Y 15-min SPY bars, net of modeled costs)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Entry time</th>
+            <th>Mean ret/trade</th>
+            <th>Win%</th>
+            <th>Worst trade</th>
+            <th>Ret/risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>09:45</td><td>+9.70%</td><td>93.8%</td><td>-87.9%</td><td>0.646</td></tr>
+          <tr><td>13:30</td><td>+9.09%</td><td>93.8%</td><td>-88.1%</td><td>0.644</td></tr>
+          <tr><td>15:00 (outside validated window)</td><td>+6.13%</td><td>91.3%</td><td>-90.5%</td><td>0.413</td></tr>
+        </tbody>
+      </table>
+      <p class="note">09:45–13:30 forms a flat, meaningfully-better plateau vs. later entries — that plateau is the validated window above, not a single best minute.</p>
+
+      <h3>Live path</h3>
+      <div class="flow">
+        <span class="step">Market hours + window check</span><span class="arrow">→</span>
+        <span class="step">Live spot + daily-vol proxy</span><span class="arrow">→</span>
+        <span class="step">Build condor</span><span class="arrow">→</span>
+        <span class="step">Risk Officer</span><span class="arrow">→</span>
+        <span class="step">Telegram YES</span><span class="arrow">→</span>
+        <span class="step">Single BAG order</span><span class="arrow">→</span>
+        <span class="step">Hand off to guard</span>
+      </div>
+
+      <div class="grid-2">
+        <div class="block">
+          <div class="meta">desk/ (VOLHARVEST)</div>
+          <ul class="clean">
+            <li><strong>signals/zero_dte_ic</strong> — pricing, delta-solved strikes, candidate builder</li>
+            <li><strong>risk/officer</strong> — entry-window + 1/day cap, shared with every sleeve</li>
+            <li><strong>risk/zero_dte_guard</strong> — standalone stop-loss + EOD-flatten monitor</li>
+            <li><strong>execution/combo</strong> — atomic BAG open + close, laddered</li>
+            <li><strong>agents/zero_dte_supervisor</strong> — entry loop + Telegram approval</li>
+          </ul>
+        </div>
+        <div class="block">
+          <div class="meta">Ops</div>
+          <ul class="clean">
+            <li>Two processes: entry supervisor + intraday guard — by design, not an oversight</li>
+            <li>15 new unit tests covering pricing, risk gates, and the guard trigger logic</li>
+            <li>Full existing VOLHARVEST suite re-run clean after these changes</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="meta">Launch</div>
+        <ul class="clean">
+          <li><code>python main.py --zero-dte-live</code> — entry supervisor, paper_sim by default</li>
+          <li><code>python main.py --zero-dte-guard</code> — intraday monitor, run as a <strong>separate</strong> process</li>
+        </ul>
+      </div>
+    </section>
+
     <!-- Stack -->
     <section id="stack" class="panel">
       <h2 class="section">Tech Stack</h2>
@@ -1130,6 +1377,7 @@
             <th>Equity</th>
             <th>CSP</th>
             <th>Sleeve E</th>
+            <th>Sleeve D (Iron Condor)</th>
           </tr>
         </thead>
         <tbody>
@@ -1138,36 +1386,42 @@
             <td><code>main.py --live-supervised</code></td>
             <td><code>--optionsdesk-live</code></td>
             <td><code>sleeve_e_supervisor.py</code></td>
+            <td><code>--zero-dte-live</code></td>
           </tr>
           <tr>
             <td>Engine</td>
             <td><code>supervised.py</code></td>
             <td><code>optionsdesk_supervised.py</code></td>
             <td><code>sleeve_e_supervisor.py</code></td>
+            <td><code>zero_dte_supervisor.py</code> + <code>zero_dte_guard.py</code> (own process)</td>
           </tr>
           <tr>
             <td>Client ID</td>
             <td>2 (dry-run)</td>
             <td><strong>5</strong></td>
             <td>pool 10+ (skip 5)</td>
+            <td>VOLHARVEST pool 51+</td>
           </tr>
           <tr>
             <td>Port</td>
             <td>7496 data / dry-run</td>
             <td>7496 live</td>
             <td>7496 live</td>
+            <td>7497 paper (Phase 6 gate — live not wired)</td>
           </tr>
           <tr>
             <td>Storage</td>
             <td><code>journal.db</code> + paper book</td>
             <td><code>optionsdesk_live_trades.csv</code></td>
             <td><code>sleeve_e_positions.json</code></td>
+            <td>VOLHARVEST position book (SQLite)</td>
           </tr>
           <tr>
             <td>Orders</td>
             <td>Dry-run only</td>
             <td>Live enabled</td>
             <td>Live enabled</td>
+            <td>Paper only — paper_sim (simulated) or paper_execute (real paper-account BAG orders)</td>
           </tr>
         </tbody>
       </table>
@@ -1208,6 +1462,18 @@
             <td>Readonly sizing</td>
           </tr>
           <tr>
+            <td>VOLHARVEST / Sleeve D entry</td>
+            <td>7497 (paper)</td>
+            <td>51+ from pool</td>
+            <td>Iron condor entry supervisor</td>
+          </tr>
+          <tr>
+            <td>Sleeve D guard</td>
+            <td>7497 (paper)</td>
+            <td>51+ from pool</td>
+            <td>Standalone stop-loss / EOD-flatten monitor — separate process from entry</td>
+          </tr>
+          <tr>
             <td>webdash</td>
             <td>7496</td>
             <td>extra sockets</td>
@@ -1228,6 +1494,7 @@
           <li>Desks are packages with hard risk boundaries and separate clientIds</li>
           <li>Sleeve E is the live earnings path; CSP skips that window (±5d)</li>
           <li>Paper vs live is coded, not just convention</li>
+          <li>Safety-critical intraday checks are their own standalone process, deliberately not sharing fate with the entry loop — ExpirationGuard (assignment prevention) and Sleeve D's guard (stop-loss + EOD flatten) both follow this</li>
         </ul>
       </div>
 
@@ -1236,37 +1503,47 @@
           <rect x="0" y="0" width="940" height="380" fill="#fafafa" stroke="#dde3df"/>
           <rect x="20" y="16" width="900" height="48" fill="#ecefeb" stroke="#dde3df"/>
           <text x="36" y="36" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1a1f1c">Shared</text>
-          <text x="36" y="52" font-family="IBM Plex Mono,monospace" font-size="11" fill="#5c6b64">IBKR 7496  ·  Telegram  ·  .env  ·  clientId pool  ·  main.py</text>
+          <text x="36" y="52" font-family="IBM Plex Mono,monospace" font-size="11" fill="#5c6b64">IBKR 7496/7497  ·  Telegram  ·  .env  ·  clientId pool  ·  main.py</text>
 
-          <rect x="20" y="80" width="290" height="280" fill="#fff" stroke="#2a5c4e" stroke-width="1.5"/>
-          <rect x="20" y="80" width="290" height="32" fill="#e9f1ee" stroke="#2a5c4e"/>
-          <text x="34" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#2a5c4e">Long Equity</text>
-          <text x="34" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">scanner · signals · sizer</text>
-          <text x="34" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">journal · paper book · trail</text>
-          <rect x="34" y="186" width="262" height="32" fill="#f3ecd8" stroke="#e2d4a8"/>
-          <text x="46" y="206" font-family="IBM Plex Mono,monospace" font-size="11" fill="#7a6418">dry-run · id 2</text>
-          <text x="34" y="248" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: swing process</text>
-          <text x="34" y="266" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Live bridge: off</text>
+          <rect x="20" y="80" width="214" height="280" fill="#fff" stroke="#2a5c4e" stroke-width="1.5"/>
+          <rect x="20" y="80" width="214" height="32" fill="#e9f1ee" stroke="#2a5c4e"/>
+          <text x="30" y="101" font-family="DM Sans,sans-serif" font-size="12" font-weight="600" fill="#2a5c4e">Long Equity</text>
+          <text x="30" y="136" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">scanner · signals</text>
+          <text x="30" y="153" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">journal · paper book</text>
+          <rect x="30" y="180" width="190" height="30" fill="#f3ecd8" stroke="#e2d4a8"/>
+          <text x="40" y="199" font-family="IBM Plex Mono,monospace" font-size="10" fill="#7a6418">dry-run · id 2</text>
+          <text x="30" y="238" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Why: swing process</text>
+          <text x="30" y="254" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Live bridge: off</text>
 
-          <rect x="325" y="80" width="290" height="280" fill="#fff" stroke="#1e4d82" stroke-width="1.5"/>
-          <rect x="325" y="80" width="290" height="32" fill="#eaf0f7" stroke="#1e4d82"/>
-          <text x="339" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#1e4d82">OptionsDesk CSP</text>
-          <text x="339" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">hypothesis V2 · IVR · regime</text>
-          <text x="339" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">ticker dedupe · 50% / 2×</text>
-          <rect x="339" y="186" width="262" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
-          <text x="351" y="206" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · 7496 / id 5</text>
-          <text x="339" y="248" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: put premium</text>
-          <text x="339" y="266" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Skip earnings ±5d</text>
+          <rect x="248" y="80" width="214" height="280" fill="#fff" stroke="#1e4d82" stroke-width="1.5"/>
+          <rect x="248" y="80" width="214" height="32" fill="#eaf0f7" stroke="#1e4d82"/>
+          <text x="258" y="101" font-family="DM Sans,sans-serif" font-size="12" font-weight="600" fill="#1e4d82">OptionsDesk CSP</text>
+          <text x="258" y="136" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">IVR + VRP gate</text>
+          <text x="258" y="153" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">ticker dedupe</text>
+          <rect x="258" y="180" width="190" height="30" fill="#d8f0e5" stroke="#b5d9c8"/>
+          <text x="266" y="199" font-family="IBM Plex Mono,monospace" font-size="10" fill="#0b6b4a">LIVE · 7496 / id 5</text>
+          <text x="258" y="238" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Why: put premium</text>
+          <text x="258" y="254" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Skip earnings ±5d</text>
 
-          <rect x="630" y="80" width="290" height="280" fill="#fff" stroke="#5a3d7a" stroke-width="1.5"/>
-          <rect x="630" y="80" width="290" height="32" fill="#f0eaf6" stroke="#5a3d7a"/>
-          <text x="644" y="101" font-family="DM Sans,sans-serif" font-size="13" font-weight="600" fill="#5a3d7a">Sleeve E</text>
-          <text x="644" y="136" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">1–3 DTE earnings · vertical</text>
-          <text x="644" y="156" font-family="DM Sans,sans-serif" font-size="12" fill="#1a1f1c">YES NAKED · close AM after</text>
-          <rect x="644" y="186" width="262" height="32" fill="#d8f0e5" stroke="#b5d9c8"/>
-          <text x="656" y="206" font-family="IBM Plex Mono,monospace" font-size="11" fill="#0b6b4a">LIVE · pool id 10+</text>
-          <text x="644" y="248" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Why: event vol crush</text>
-          <text x="644" y="266" font-family="DM Sans,sans-serif" font-size="11" fill="#5c6b64">Does not use id 5</text>
+          <rect x="476" y="80" width="214" height="280" fill="#fff" stroke="#5a3d7a" stroke-width="1.5"/>
+          <rect x="476" y="80" width="214" height="32" fill="#f0eaf6" stroke="#5a3d7a"/>
+          <text x="486" y="101" font-family="DM Sans,sans-serif" font-size="12" font-weight="600" fill="#5a3d7a">Sleeve E</text>
+          <text x="486" y="136" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">1–3 DTE earnings</text>
+          <text x="486" y="153" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">close AM after print</text>
+          <rect x="486" y="180" width="190" height="30" fill="#d8f0e5" stroke="#b5d9c8"/>
+          <text x="494" y="199" font-family="IBM Plex Mono,monospace" font-size="10" fill="#0b6b4a">LIVE · pool id 10+</text>
+          <text x="486" y="238" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Why: event vol crush</text>
+          <text x="486" y="254" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Does not use id 5</text>
+
+          <rect x="704" y="80" width="214" height="280" fill="#fff" stroke="#7a6418" stroke-width="1.5"/>
+          <rect x="704" y="80" width="214" height="32" fill="#f3ecd8" stroke="#7a6418"/>
+          <text x="714" y="101" font-family="DM Sans,sans-serif" font-size="12" font-weight="600" fill="#7a6418">Sleeve D · Iron Condor</text>
+          <text x="714" y="136" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">0DTE SPY · 09:45–13:30</text>
+          <text x="714" y="153" font-family="DM Sans,sans-serif" font-size="11" fill="#1a1f1c">entry + guard = 2 procs</text>
+          <rect x="714" y="180" width="190" height="30" fill="#f3ecd8" stroke="#e2d4a8"/>
+          <text x="722" y="199" font-family="IBM Plex Mono,monospace" font-size="10" fill="#7a6418">PAPER · 7497 / pool 51+</text>
+          <text x="714" y="238" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">Why: same-day theta</text>
+          <text x="714" y="254" font-family="DM Sans,sans-serif" font-size="10" fill="#5c6b64">New this update</text>
         </svg>
       </div>
 
@@ -1275,6 +1552,7 @@
 <span class="eq">backtester/</span>    equity replay + regime helpers
 <span class="eq">engine/</span>        supervised loops (equity · CSP · Sleeve E)
 <span class="op">optionsdesk/</span>  live CSP + hypothesis + Sleeve E signal
+<span class="vh">desk/</span>         VOLHARVEST — Sleeves A(retired)/B/C/D, Risk Officer, ExpirationGuard
 <span class="cv">conviction/</span>   discretionary thesis book
 scripts/       ops runners + webdash
 data/          DBs, caches, fills, scan logs
